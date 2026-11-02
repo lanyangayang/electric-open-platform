@@ -116,7 +116,7 @@ await ElectricOpenPlatform.handleRedirect('http://yourserverurl/receive?code=xxx
 | `realtimeChannels({mac})` | 同上，拍平为带 `mac` 的线路数组 |
 | `list({mac\|param})` | `GET_BOX_CHANNELS` |
 | `channelsOc({mac})` | `GET_BOX_CHANNELS_OC` |
-| `history({mac,addr,start,end})` | `GET_BOX_CHANNELS_REALTIME_HISTORY` |
+| `history({mac,date,addr?})` | `GET_BOX_CHANNELS_REALTIME_HISTORY`（**仅按天**，`date` 格式 `yyyy-MM-dd`） |
 
 ### `control`
 | 方法 | 命令 |
@@ -137,11 +137,49 @@ await ElectricOpenPlatform.handleRedirect('http://yourserverurl/receive?code=xxx
 | `list({start,end,mac?,page?})` | `GET_BOX_ALARM`，返回 `{total,page,totalPage,datas}` |
 | `listAll(opts)` | 自动翻页 |
 | `byType({...,typeNumbers})` | 本地按告警类型过滤（配合 `AlarmType` 枚举） |
-| `maintenance` / `urged` | `GET_ALARM_MAINTENANCE` / `ALARM_URGED` |
+| `maintenance({alarmId})` | `GET_ALARM_MAINTENANCE`（支持数组，最多 20 个） |
+| `urged({mac,alarmId})` | `ALARM_URGED`（`mac` 为**必填**） |
+| `boxMaintenanceHistory({mac?,start,end})` | `GET_BOX_MAINTENANCE_HISTORY`（`start`/`end` 必填，`pageSize` ≤100） |
 
 ### `stats`
-`day()` / `hour()` / `month()` 对应 `GET_BOXS_DAY_STATS` / `_HOUR_` / `_MON_STATS`，
+`day()` / `hour()` / `month()` 对应 **`GET_BOXES_DAY_STATS`** / `_HOUR_` / `_MON_STATS`，
 另有 `totalElectricity(rows)` 帮你从 `addr=0` 那一行取设备总电量。
+
+> ⚠️ 方法名是 `GET_BOXES_*`（BOX + **ES**），不是 `GET_BOXS_*`。
+> 少一个 E 时平台返回「接口名称(X)无效！」，很容易被误判成「接口未开通」。已修正并加回归测试。
+
+### `thirdparty` — 第三方设备
+烟感 / 燃气 / 水表 / 温湿度 / 光照等（`equipmentType ≠ 1/2`）走独立接口：
+
+| 方法 | 平台接口 |
+| --- | --- |
+| `status({mac,equipmentType,dataType?,startDate?,endDate?})` | `GET_THR_DEVICE_STATUS` |
+| `statusParsed(...)` | 同上，并把 `data` 的 JSON 字符串解析成对象 |
+| `listDevices({equipmentType})` | `GET_BOXES` 按类型过滤 |
+
+```ts
+import { ThirdPartyEquipmentType, MeterQueryType } from '@mantunsci/capacitor-electric-open-platform';
+
+// 感烟
+const rows = await ElectricOpenPlatform.thirdparty.statusParsed({
+  mac: '866971033551412',
+  equipmentType: ThirdPartyEquipmentType.SmokeForSafe, // 6
+});
+// rows[0] = { devType:'FS3031', msgType:'BatVol', data:{ BatLow:0, Voltage:'2.78' }, mac:'…' }
+
+// 智能水表必须指定 dataType
+await ElectricOpenPlatform.thirdparty.status({
+  mac: 'W1',
+  equipmentType: ThirdPartyEquipmentType.SmartWaterMeter, // 16
+  dataType: MeterQueryType.Range,
+  startDate: '2026-11-01',
+  endDate: '2026-11-02',
+});
+```
+
+平台约束（插件已内置校验）：
+- `equipmentType` 传 1（微断）或 2（电气火灾）会被拒绝 → 改用 `channel.realtime()`
+- 智能水表(16) 必须带 `dataType`；`dataType=1` 时必须带 `startDate`/`endDate`
 
 ### `scene` / `push`
 `scene.list()` / `scene.execute()`；`push.query/subscribe/unsubscribe/failedCheck/failedReset`，
@@ -199,39 +237,53 @@ try {
 | 接口 | 结果 |
 | --- | --- |
 | `GET_PROJECT_INFO` | ✅ 佛山市毅丰电器实业有限公司（AUDITED） |
+| `GET_PROJECT_DAY_STATS` | ✅ |
 | `GET_BOXES` | ✅ 11 台设备，在线 2 台 |
 | `GET_BOX_POSITION_TREE` | ✅ 2 个顶层层级 |
-| `GET_BOX_CHANNELS_REALTIME` | ✅ 2 台 → 55 条线路（含实时电压/电流/温度/漏电） |
+| `GET_BOX_CHANNELS_REALTIME` | ✅ → 线路实时电压/电流/温度/漏电 |
 | `GET_BOX_CHANNELS` / `_OC` | ✅ 28 个有效节点 |
-| `GET_BOX_ALARM` | ✅ 近 24h 48 条告警 |
+| `GET_BOX_CHANNELS_REALTIME_HISTORY` | ✅ 88 条（参数是 `date`，**不是**区间） |
+| `GET_BOX_ALARM` | ✅ 近 24h 数十条告警 |
 | `GET_BOX_PROPERTIES` | ✅（**必须**带 `nodeType=COMM`） |
 | `GET_BOX_ONLINE_HISTORY` | ✅（参数是 `startTime`/`endTime`，**不是** `start`/`end`） |
+| `GET_BOX_MAINTENANCE_HISTORY` | ✅（`start`/`end` 必填） |
 | `GET_CFG_TIMER` / `GET_CFG_LKICHK` | ✅ |
+| `SCENE_SERVICE` / `SUBSCRIBE_PUSH_SERVICE` | ✅ |
+| `GET_THR_DEVICE_STATUS` | ✅（按 `equipmentType` 调用，本项目无第三方设备故返回空） |
+| **`GET_BOXES_DAY_STATS` / `_HOUR_STATS` / `_MON_STATS`** | ✅ 均返回真实数据（**本轮修复**） |
 | `oauth/refresh.as` | ✅ 刷新后再次调用正常 |
 
-**当前 appKey 未开通**（平台用 `接口名称(X)无效！` 或误导性的 `无效的接口方法参数签名！` 提示，
-插件统一翻译为 `E_NOT_PROVISIONED`）：
+**当前 appKey 唯一未开通的接口：`GET_BOX`**。已用对照实验确认（`GET_BOXES` 同一签名算法成功、
+`GET_BOX` 换三组参数均失败、故意破坏签名会得到同样文案），属于接口级未授权，
+不是插件实现或签名问题。需要时请联系平台商务开通。
 
-- `GET_BOX`
-- `GET_BOXS_DAY_STATS` / `GET_BOXS_HOUR_STATS` / `GET_BOXS_MON_STATS`
+### 接口命名陷阱（务必注意）
 
-> ⚠️ 注意：`无效的接口方法参数签名！` 在这种场景下**不是**签名写错了。排查签名问题时，
-> 请先确认同一 appKey 的其他接口是否正常。
+| 现象 | 真实原因 |
+| --- | --- |
+| `接口名称(X)无效！` | 方法名写错 **或** 该 appKey 未开通 |
+| `无效的接口方法参数签名！` | 既可能是签名错，**也可能是接口未开通**——平台复用同一文案 |
+
+典型踩坑：把 `GET_BOXES_DAY_STATS` 写成 `GET_BOXS_DAY_STATS`（少一个 `E`），
+返回 `接口名称(GET_BOXS_DAY_STATS)无效！`，极易误判为“未开通”而放弃接入。
+插件已按文档修正，并有回归测试锁定三个统计接口的方法名。
 
 复现验证：
 
 ```bash
 npm run build
-# 先设置环境变量，见 scripts/verify-live.mjs 顶部注释
-node scripts/verify-live.mjs      # 端到端 16 项检查
-node scripts/probe-methods.mjs    # 逐个接口探测开通状态
+# 先设置 EOP_* 环境变量，见 scripts/verify-live.mjs 顶部注释
+node scripts/verify-live.mjs       # 端到端 16 项检查
+node scripts/verify-all-apis.mjs   # 全量接口逐个调用（20/21 通过，GET_BOX 未开通）
+node scripts/diff-api-coverage.cjs # 文档 vs 实现 覆盖率对照（应为「未封装: 0 个」）
+node scripts/diagnose-getbox.mjs   # 对照实验：证明 GET_BOX 是未开通而非签名错
 ```
 
 ## 本地调试
 
 ```bash
 npm install
-npm test          # 63 个单测：MD5 向量、签名文档样例、token 生命周期、接口参数
+npm test          # 86 个单测：MD5 向量、签名样例、token 生命周期、接口参数、方法名回归
 npm run build     # 产出 dist/esm + dist/plugin.cjs + d.ts
 npm run demo      # 打开 http://localhost:5178 调试台
 ```

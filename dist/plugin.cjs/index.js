@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PushApi = exports.SceneApi = exports.StatsApi = exports.AlarmApi = exports.ControlApi = exports.ChannelApi = exports.BoxApi = exports.ProjectApi = exports.verifyPushKey = exports.RouterClient = exports.AuthManager = exports.resetStorageBackend = exports.resolveBackend = exports.TokenStore = exports.DEFAULT_BASE_URL = exports.isElectricOpenPlatformError = exports.describeCode = exports.TransportCodes = exports.PlatformCodes = exports.ElectricOpenPlatformError = exports.postForm = exports.signRefreshSecret = exports.signAuthCodeSecret = exports.encodeForm = exports.buildSignedRequest = exports.signParams = exports.formatAlarmTime = exports.formatTimestamp = exports.md5 = exports.ElectricOpenPlatformClient = exports.ElectricOpenPlatform = void 0;
+exports.PushApi = exports.parseThirdPartyData = exports.ThirdPartyDeviceApi = exports.SceneApi = exports.StatsApi = exports.AlarmApi = exports.ControlApi = exports.ChannelApi = exports.BoxApi = exports.ProjectApi = exports.verifyPushKey = exports.RouterClient = exports.AuthManager = exports.resetStorageBackend = exports.resolveBackend = exports.TokenStore = exports.DEFAULT_BASE_URL = exports.isElectricOpenPlatformError = exports.describeCode = exports.TransportCodes = exports.PlatformCodes = exports.ElectricOpenPlatformError = exports.postForm = exports.signRefreshSecret = exports.signAuthCodeSecret = exports.encodeForm = exports.buildSignedRequest = exports.signParams = exports.formatAlarmTime = exports.formatTimestamp = exports.md5 = exports.ElectricOpenPlatformClient = exports.ElectricOpenPlatform = void 0;
 /**
  * @packageDocumentation
  * Capacitor plugin for the Mtsci 智慧式用电数据开放平台 (open.snd02.com).
@@ -80,6 +80,8 @@ Object.defineProperty(exports, "ControlApi", { enumerable: true, get: function (
 Object.defineProperty(exports, "AlarmApi", { enumerable: true, get: function () { return api_js_1.AlarmApi; } });
 Object.defineProperty(exports, "StatsApi", { enumerable: true, get: function () { return api_js_1.StatsApi; } });
 Object.defineProperty(exports, "SceneApi", { enumerable: true, get: function () { return api_js_1.SceneApi; } });
+Object.defineProperty(exports, "ThirdPartyDeviceApi", { enumerable: true, get: function () { return api_js_1.ThirdPartyDeviceApi; } });
+Object.defineProperty(exports, "parseThirdPartyData", { enumerable: true, get: function () { return api_js_1.parseThirdPartyData; } });
 var push_js_2 = require("./core/push.js");
 Object.defineProperty(exports, "PushApi", { enumerable: true, get: function () { return push_js_2.PushApi; } });
 __exportStar(require("./core/models.js"), exports);

@@ -11,7 +11,7 @@
  * const boxes = await ElectricOpenPlatform.box.list();
  * ```
  */
-import { AlarmApi, BoxApi, ChannelApi, ControlApi, ProjectApi, SceneApi, StatsApi } from './core/api.js';
+import { AlarmApi, BoxApi, ChannelApi, ControlApi, ProjectApi, SceneApi, StatsApi, ThirdPartyDeviceApi } from './core/api.js';
 import { PushApi } from './core/push.js';
 import { ElectricConfig, LoginResult, TokenSet } from './core/types.js';
 export declare class ElectricOpenPlatformClient {
@@ -27,6 +27,8 @@ export declare class ElectricOpenPlatformClient {
     stats: StatsApi;
     scene: SceneApi;
     push: PushApi;
+    /** 第三方设备（烟感/燃气/水表/温湿度…），即 equipmentType ≠ 1/2 */
+    thirdparty: ThirdPartyDeviceApi;
     private credentials;
     /**
      * Configures the plugin. Safe to call again (e.g. after the user switches

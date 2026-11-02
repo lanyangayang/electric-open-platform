@@ -1,6 +1,6 @@
 import { RouterClient } from './router.js';
 import { ParamValue } from './sign.js';
-import { AlarmRecord, AlarmTypeNumber, Box, BoxChannel, BoxChannels, BoxControlCmd, BoxControlCommand, BoxProperty, BoxRealtime, BoxStat, BoxStatsByMac, BoxStatsByMacAndPeriod, LeakageCheckConfig, OnlineHistoryRecord, PagedResult, PositionNode, ProjectInfo, Scene, TimerConfig } from './models.js';
+import { AlarmRecord, AlarmTypeNumber, Box, BoxChannel, BoxChannels, BoxControlCmd, BoxControlCommand, BoxProperty, BoxRealtime, BoxStat, BoxStatsByMac, BoxStatsByMacAndPeriod, LeakageCheckConfig, MaintenanceRecord, MeterQueryType, OnlineHistoryRecord, PagedResult, PositionNode, ProjectInfo, Scene, ThirdPartyDeviceStatus, ThirdPartyEquipmentType, TimerConfig } from './models.js';
 /** Shared helpers so every module treats `projectCode` and limits identically. */
 declare class ApiBase {
     protected readonly client: RouterClient;
@@ -120,12 +120,20 @@ export declare class ChannelApi extends ApiBase {
         mac: string | string[];
         projectCode?: string;
     }): Promise<BoxChannels[]>;
-    /** 历史数据 GET_BOX_CHANNELS_REALTIME_HISTORY */
+    /**
+     * 历史节点数据 GET_BOX_CHANNELS_REALTIME_HISTORY.
+     *
+     * 平台**仅支持按天**查询：参数是 `date`（yyyy-MM-dd，默认当天），
+     * 不是开始/结束区间。
+     */
     history(args: {
         mac: string;
-        addr?: number | string;
-        start: string;
-        end: string;
+        /** yyyy-MM-dd，默认为当天 */
+        date?: string;
+        addr?: number;
+        isReturnTotal?: boolean;
+        page?: number;
+        pageSize?: number;
         projectCode?: string;
     }): Promise<unknown>;
 }
@@ -247,26 +255,49 @@ export declare class AlarmApi extends ApiBase {
     byType(args: Parameters<AlarmApi['list']>[0] & {
         typeNumbers: AlarmTypeNumber[];
     }): Promise<AlarmRecord[]>;
-    /** 告警维护记录 GET_ALARM_MAINTENANCE */
+    /**
+     * 告警维护记录 GET_ALARM_MAINTENANCE.
+     * `alarmId` 支持单个或数组（平台最多 20 个，逗号分隔）。
+     */
     maintenance(args: {
-        alarmId: number | string;
+        alarmId: number | string | (number | string)[];
         projectCode?: string;
     }): Promise<unknown>;
-    /** 催办/处理告警 ALARM_URGED */
+    /**
+     * 催办/处理告警 ALARM_URGED.
+     * 注意 `mac` 是必填项（文档与旧实现不一致处，已按平台实测修正）。
+     */
     urged(args: {
-        alarmId: number | string;
-        projectCode?: string;
-    }): Promise<unknown>;
-    /** 设备维保历史 GET_BOX_MAINTENANCE_HISTORY */
-    boxMaintenanceHistory(args: {
         mac: string;
+        alarmId: number | string | (number | string)[];
         projectCode?: string;
     }): Promise<unknown>;
+    /**
+     * 设备维保工单处理历史 GET_BOX_MAINTENANCE_HISTORY.
+     * `start`/`end` 必填（yyyy-MM-dd HH:mm）：start 需在最近一个月内，end 不得晚于今天。
+     */
+    boxMaintenanceHistory(args: {
+        mac?: string;
+        start: Date | string;
+        end: Date | string;
+        page?: number;
+        pageSize?: number;
+        projectCode?: string;
+    }): Promise<PagedResult<MaintenanceRecord>>;
 }
-/** 统计 */
+/**
+ * 统计.
+ *
+ * 方法名是 `GET_BOXES_*`（BOX + ES），**不是** `GET_BOXS_*`。
+ * 两者只差一个字母，但平台对错误拼写的回答是「接口名称(X)无效！」，
+ * 极易被误判成「接口未开通」。已对真实服务器逐个验证过。
+ */
 export declare class StatsApi extends ApiBase {
     private period;
-    /** 日统计 — 不传 day 返回当月每天 */
+    /**
+     * 日区间统计 GET_BOXES_DAY_STATS.
+     * 不传 `day` 时返回当月每天的数据。
+     */
     day(args: {
         mac: string | string[];
         year: string;
@@ -274,7 +305,7 @@ export declare class StatsApi extends ApiBase {
         day?: string;
         projectCode?: string;
     }): Promise<BoxStatsByMac | BoxStatsByMacAndPeriod>;
-    /** 小时统计 */
+    /** 小时区间统计 GET_BOXES_HOUR_STATS. */
     hour(args: {
         mac: string | string[];
         year: string;
@@ -282,7 +313,7 @@ export declare class StatsApi extends ApiBase {
         day: string;
         projectCode?: string;
     }): Promise<BoxStatsByMac>;
-    /** 月统计 */
+    /** 月区间统计 GET_BOXES_MON_STATS. */
     month(args: {
         mac: string | string[];
         year: string;
@@ -302,4 +333,45 @@ export declare class SceneApi extends ApiBase {
         projectCode?: string;
     }): Promise<unknown>;
 }
+/**
+ * 第三方设备（烟感/燃气/水表/温湿度等，即 equipmentType ≠ 1/2 的设备）。
+ *
+ * 这些设备没有「线路」概念，状态通过 GET_THR_DEVICE_STATUS 按消息类型返回。
+ */
+export declare class ThirdPartyDeviceApi extends ApiBase {
+    /**
+     * 获取第三方设备状态 GET_THR_DEVICE_STATUS.
+     *
+     * @param args.equipmentType 必填，且必须是**第三方**设备类型
+     *   （4/5/6/7/10/11/12/13/14/16/29/39/42/45）。传 1 或 2 会被平台以
+     *   「设备类型无效！」拒绝——微断请用 {@link ChannelApi.realtime}。
+     * @param args.dataType 仅智能水表(16)必填：0 实时抄表 / 1 时间范围
+     * @param args.startDate / endDate `dataType=1` 时必填，格式 yyyy-MM-dd
+     */
+    status(args: {
+        mac: string;
+        equipmentType: ThirdPartyEquipmentType | number;
+        dataType?: MeterQueryType | number;
+        startDate?: string;
+        endDate?: string;
+        projectCode?: string;
+    }): Promise<ThirdPartyDeviceStatus[]>;
+    /**
+     * 同上，但把每条记录的 `data` JSON 字符串解析成对象，
+     * 便于直接绑定到 UI（解析失败时保留原始字符串）。
+     */
+    statusParsed(args: Parameters<ThirdPartyDeviceApi['status']>[0]): Promise<(Omit<ThirdPartyDeviceStatus, 'data'> & {
+        data: unknown;
+    })[]>;
+    /** 列出项目中某类型的第三方设备（从 GET_BOXES 过滤）。 */
+    listDevices(args: {
+        equipmentType: ThirdPartyEquipmentType | number;
+        projectCode?: string;
+    }): Promise<Box[]>;
+}
+/**
+ * 解析第三方设备 status 的 `data` 字段。
+ * 该字段是 JSON 字符串；个别设备会返回纯数字（如 `"0"`），此时原样返回。
+ */
+export declare function parseThirdPartyData(raw: unknown): unknown;
 export type { BoxRealtime, BoxChannel };

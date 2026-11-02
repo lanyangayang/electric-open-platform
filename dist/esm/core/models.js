@@ -72,4 +72,31 @@ export var PushType;
     PushType[PushType["ChannelStatus"] = 2] = "ChannelStatus";
     PushType[PushType["Event"] = 3] = "Event";
 })(PushType || (PushType = {}));
+/**
+ * 第三方设备类型（GET_THR_DEVICE_STATUS 的 equipmentType）。
+ * 注意：这些是「非微断」设备，微断(1)/电气火灾(2) 不走这个接口。
+ */
+export var ThirdPartyEquipmentType;
+(function (ThirdPartyEquipmentType) {
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["LiquidLevel"] = 4] = "LiquidLevel";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["Pressure"] = 5] = "Pressure";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeForSafe"] = 6] = "SmokeForSafe";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["GasForSafe"] = 7] = "GasForSafe";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeZac"] = 10] = "SmokeZac";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["TempHumidity"] = 11] = "TempHumidity";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmartMeter"] = 12] = "SmartMeter";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["GasZac"] = 13] = "GasZac";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["Lux"] = 14] = "Lux";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmartWaterMeter"] = 16] = "SmartWaterMeter";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeWanlin"] = 29] = "SmokeWanlin";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["TempWanlin"] = 39] = "TempWanlin";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeHaiman"] = 42] = "SmokeHaiman";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["GasHaiman"] = 45] = "GasHaiman";
+})(ThirdPartyEquipmentType || (ThirdPartyEquipmentType = {}));
+/** 智能水表(CHaobiamao) 查询模式：0=实时抄表，1=时间范围 */
+export var MeterQueryType;
+(function (MeterQueryType) {
+    MeterQueryType[MeterQueryType["Realtime"] = 0] = "Realtime";
+    MeterQueryType[MeterQueryType["Range"] = 1] = "Range";
+})(MeterQueryType || (MeterQueryType = {}));
 //# sourceMappingURL=models.js.map

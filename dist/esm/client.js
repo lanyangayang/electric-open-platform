@@ -11,7 +11,7 @@
  * const boxes = await ElectricOpenPlatform.box.list();
  * ```
  */
-import { AlarmApi, BoxApi, ChannelApi, ControlApi, ProjectApi, SceneApi, StatsApi } from './core/api.js';
+import { AlarmApi, BoxApi, ChannelApi, ControlApi, ProjectApi, SceneApi, StatsApi, ThirdPartyDeviceApi, } from './core/api.js';
 import { AuthManager } from './core/auth.js';
 import { PushApi } from './core/push.js';
 import { RouterClient } from './core/router.js';
@@ -44,6 +44,7 @@ export class ElectricOpenPlatformClient {
         this.stats = new StatsApi(router);
         this.scene = new SceneApi(router);
         this.push = new PushApi(router);
+        this.thirdparty = new ThirdPartyDeviceApi(router);
         await auth.restore();
     }
     /** True once `configure()` succeeded. */

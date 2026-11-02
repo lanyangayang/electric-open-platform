@@ -32,7 +32,7 @@ export { AuthManager } from './core/auth.js';
 export { RouterClient } from './core/router.js';
 export { verifyPushKey } from './core/push.js';
 // Domain APIs (for typing custom wrappers) and every wire model / enum.
-export { ProjectApi, BoxApi, ChannelApi, ControlApi, AlarmApi, StatsApi, SceneApi } from './core/api.js';
+export { ProjectApi, BoxApi, ChannelApi, ControlApi, AlarmApi, StatsApi, SceneApi, ThirdPartyDeviceApi, parseThirdPartyData, } from './core/api.js';
 export { PushApi } from './core/push.js';
 export * from './core/models.js';
 //# sourceMappingURL=index.js.map

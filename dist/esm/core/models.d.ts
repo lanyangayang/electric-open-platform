@@ -375,3 +375,67 @@ export declare enum PushType {
     ChannelStatus = 2,
     Event = 3
 }
+/**
+ * 第三方设备类型（GET_THR_DEVICE_STATUS 的 equipmentType）。
+ * 注意：这些是「非微断」设备，微断(1)/电气火灾(2) 不走这个接口。
+ */
+export declare enum ThirdPartyEquipmentType {
+    LiquidLevel = 4,
+    Pressure = 5,
+    SmokeForSafe = 6,
+    GasForSafe = 7,
+    SmokeZac = 10,
+    TempHumidity = 11,
+    SmartMeter = 12,
+    GasZac = 13,
+    Lux = 14,
+    SmartWaterMeter = 16,
+    SmokeWanlin = 29,
+    TempWanlin = 39,
+    SmokeHaiman = 42,
+    GasHaiman = 45
+}
+/**
+ * 第三方设备状态记录 GET_THR_DEVICE_STATUS.
+ *
+ * 平台按 `msgType` 分条返回，`data` 是**JSON 字符串**（需自行解析），
+ * 且不同设备类型的字段完全不同（感烟有 BatVol/DevInfo/NetBeats/Status，
+ * 水表/电表则是抄表读数）。用 {@link parseThirdPartyData} 安全解析。
+ */
+export interface ThirdPartyDeviceStatus {
+    /** 设备型号，如 FS3031 */
+    devType: string;
+    /** 消息类型，如 BatVol / DevInfo / NetBeats / Status */
+    msgType: string;
+    /** JSON 字符串载荷 */
+    data: string;
+    mac: string;
+}
+/** 智能水表(CHaobiamao) 查询模式：0=实时抄表，1=时间范围 */
+export declare enum MeterQueryType {
+    Realtime = 0,
+    Range = 1
+}
+/**
+ * 设备维保工单处理记录 GET_BOX_MAINTENANCE_HISTORY.
+ * 字段为可选，因为不同版本平台返回的集合略有差异。
+ */
+export interface MaintenanceRecord {
+    /** 关联的报警 id */
+    alarmId?: string;
+    /** 维保单 id */
+    id?: string;
+    mac?: string;
+    projectCode?: string;
+    /** 处理人 */
+    handlerUserName?: string;
+    handlerUserPhone?: string;
+    /** 维保内容 */
+    maintenanceContent?: string;
+    /** 故障内容 */
+    malfunctionContent?: string;
+    /** 处理结果 */
+    handledResult?: string;
+    suggest?: string;
+    [key: string]: unknown;
+}

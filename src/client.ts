@@ -11,7 +11,16 @@
  * const boxes = await ElectricOpenPlatform.box.list();
  * ```
  */
-import { AlarmApi, BoxApi, ChannelApi, ControlApi, ProjectApi, SceneApi, StatsApi } from './core/api.js';
+import {
+  AlarmApi,
+  BoxApi,
+  ChannelApi,
+  ControlApi,
+  ProjectApi,
+  SceneApi,
+  StatsApi,
+  ThirdPartyDeviceApi,
+} from './core/api.js';
 import { AuthManager } from './core/auth.js';
 import { PushApi } from './core/push.js';
 import { RouterClient } from './core/router.js';
@@ -32,6 +41,8 @@ export class ElectricOpenPlatformClient {
   stats!: StatsApi;
   scene!: SceneApi;
   push!: PushApi;
+  /** 第三方设备（烟感/燃气/水表/温湿度…），即 equipmentType ≠ 1/2 */
+  thirdparty!: ThirdPartyDeviceApi;
 
   private credentials: { username?: string; password?: string } = {};
 
@@ -63,6 +74,7 @@ export class ElectricOpenPlatformClient {
     this.stats = new StatsApi(router);
     this.scene = new SceneApi(router);
     this.push = new PushApi(router);
+    this.thirdparty = new ThirdPartyDeviceApi(router);
 
     await auth.restore();
   }

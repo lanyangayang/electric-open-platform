@@ -7,7 +7,7 @@
  * than surfacing as `undefined` in the UI.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PushType = exports.AlarmType = exports.EquipmentType = void 0;
+exports.MeterQueryType = exports.ThirdPartyEquipmentType = exports.PushType = exports.AlarmType = exports.EquipmentType = void 0;
 /** 设备类型 */
 var EquipmentType;
 (function (EquipmentType) {
@@ -75,4 +75,31 @@ var PushType;
     PushType[PushType["ChannelStatus"] = 2] = "ChannelStatus";
     PushType[PushType["Event"] = 3] = "Event";
 })(PushType || (exports.PushType = PushType = {}));
+/**
+ * 第三方设备类型（GET_THR_DEVICE_STATUS 的 equipmentType）。
+ * 注意：这些是「非微断」设备，微断(1)/电气火灾(2) 不走这个接口。
+ */
+var ThirdPartyEquipmentType;
+(function (ThirdPartyEquipmentType) {
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["LiquidLevel"] = 4] = "LiquidLevel";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["Pressure"] = 5] = "Pressure";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeForSafe"] = 6] = "SmokeForSafe";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["GasForSafe"] = 7] = "GasForSafe";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeZac"] = 10] = "SmokeZac";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["TempHumidity"] = 11] = "TempHumidity";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmartMeter"] = 12] = "SmartMeter";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["GasZac"] = 13] = "GasZac";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["Lux"] = 14] = "Lux";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmartWaterMeter"] = 16] = "SmartWaterMeter";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeWanlin"] = 29] = "SmokeWanlin";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["TempWanlin"] = 39] = "TempWanlin";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["SmokeHaiman"] = 42] = "SmokeHaiman";
+    ThirdPartyEquipmentType[ThirdPartyEquipmentType["GasHaiman"] = 45] = "GasHaiman";
+})(ThirdPartyEquipmentType || (exports.ThirdPartyEquipmentType = ThirdPartyEquipmentType = {}));
+/** 智能水表(CHaobiamao) 查询模式：0=实时抄表，1=时间范围 */
+var MeterQueryType;
+(function (MeterQueryType) {
+    MeterQueryType[MeterQueryType["Realtime"] = 0] = "Realtime";
+    MeterQueryType[MeterQueryType["Range"] = 1] = "Range";
+})(MeterQueryType || (exports.MeterQueryType = MeterQueryType = {}));
 //# sourceMappingURL=models.js.map

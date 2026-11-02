@@ -14,11 +14,15 @@ import {
   BoxStatsByMac,
   BoxStatsByMacAndPeriod,
   LeakageCheckConfig,
+  MaintenanceRecord,
+  MeterQueryType,
   OnlineHistoryRecord,
   PagedResult,
   PositionNode,
   ProjectInfo,
   Scene,
+  ThirdPartyDeviceStatus,
+  ThirdPartyEquipmentType,
   TimerConfig,
 } from './models.js';
 
@@ -220,17 +224,35 @@ export class ChannelApi extends ApiBase {
     );
   }
 
-  /** 历史数据 GET_BOX_CHANNELS_REALTIME_HISTORY */
+  /**
+   * 历史节点数据 GET_BOX_CHANNELS_REALTIME_HISTORY.
+   *
+   * 平台**仅支持按天**查询：参数是 `date`（yyyy-MM-dd，默认当天），
+   * 不是开始/结束区间。
+   */
   history(args: {
     mac: string;
-    addr?: number | string;
-    start: string;
-    end: string;
+    /** yyyy-MM-dd，默认为当天 */
+    date?: string;
+    addr?: number;
+    isReturnTotal?: boolean;
+    page?: number;
+    pageSize?: number;
     projectCode?: string;
   }): Promise<unknown> {
+    if (args.date && !/^\d{4}-\d{2}-\d{2}$/.test(args.date)) {
+      throw new Error('date 格式应为 yyyy-MM-dd');
+    }
     return this.call(
       'GET_BOX_CHANNELS_REALTIME_HISTORY',
-      { mac: args.mac, addr: args.addr, start: args.start, end: args.end },
+      {
+        mac: args.mac,
+        date: args.date,
+        addr: args.addr,
+        isReturnTotal: args.isReturnTotal === undefined ? undefined : args.isReturnTotal ? 'true' : 'false',
+        page: args.page ?? 1,
+        pageSize: args.pageSize ?? 100,
+      },
       args.projectCode,
     );
   }
@@ -466,24 +488,75 @@ export class AlarmApi extends ApiBase {
     return rows.filter((r) => set.has(r.typeNumber));
   }
 
-  /** 告警维护记录 GET_ALARM_MAINTENANCE */
-  maintenance(args: { alarmId: number | string; projectCode?: string }): Promise<unknown> {
-    return this.call('GET_ALARM_MAINTENANCE', { alarmId: args.alarmId }, args.projectCode);
+  /**
+   * 告警维护记录 GET_ALARM_MAINTENANCE.
+   * `alarmId` 支持单个或数组（平台最多 20 个，逗号分隔）。
+   */
+  maintenance(args: { alarmId: number | string | (number | string)[]; projectCode?: string }): Promise<unknown> {
+    return this.call(
+      'GET_ALARM_MAINTENANCE',
+      { alarmId: toIdList(args.alarmId, 'GET_ALARM_MAINTENANCE') },
+      args.projectCode,
+    );
   }
 
-  /** 催办/处理告警 ALARM_URGED */
-  urged(args: { alarmId: number | string; projectCode?: string }): Promise<unknown> {
-    return this.call('ALARM_URGED', { alarmId: args.alarmId }, args.projectCode);
+  /**
+   * 催办/处理告警 ALARM_URGED.
+   * 注意 `mac` 是必填项（文档与旧实现不一致处，已按平台实测修正）。
+   */
+  urged(args: {
+    mac: string;
+    alarmId: number | string | (number | string)[];
+    projectCode?: string;
+  }): Promise<unknown> {
+    return this.call(
+      'ALARM_URGED',
+      { mac: args.mac, alarmId: toIdList(args.alarmId, 'ALARM_URGED') },
+      args.projectCode,
+    );
   }
 
-  /** 设备维保历史 GET_BOX_MAINTENANCE_HISTORY */
-  boxMaintenanceHistory(args: { mac: string; projectCode?: string }): Promise<unknown> {
-    return this.call('GET_BOX_MAINTENANCE_HISTORY', { mac: args.mac }, args.projectCode);
+  /**
+   * 设备维保工单处理历史 GET_BOX_MAINTENANCE_HISTORY.
+   * `start`/`end` 必填（yyyy-MM-dd HH:mm）：start 需在最近一个月内，end 不得晚于今天。
+   */
+  boxMaintenanceHistory(args: {
+    mac?: string;
+    start: Date | string;
+    end: Date | string;
+    page?: number;
+    pageSize?: number;
+    projectCode?: string;
+  }): Promise<PagedResult<MaintenanceRecord>> {
+    if (args.pageSize !== undefined && (args.pageSize < 1 || args.pageSize > 100)) {
+      throw new Error('pageSize 取值范围 1~100');
+    }
+    return this.call<PagedResult<MaintenanceRecord>>(
+      'GET_BOX_MAINTENANCE_HISTORY',
+      {
+        mac: args.mac,
+        start: toAlarmTime(args.start),
+        end: toAlarmTime(args.end),
+        page: args.page ?? 1,
+        pageSize: args.pageSize ?? 100,
+      },
+      args.projectCode,
+    );
   }
 }
 
-function toAlarmTime(value: Date | string): string {
-  if (typeof value === 'string') return value;
+/**
+ * 把单个/多个 ID 归一化为平台要求的逗号串。
+ * 平台限制每条请求最多 20 个 ID。
+ */
+function toIdList(value: number | string | (number | string)[], method: string): string {
+  const list = (Array.isArray(value) ? value : String(value).split(',')).map((v) => String(v).trim()).filter(Boolean);
+  if (list.length === 0) throw new Error(`${method}: alarmId 不能为空`);
+  if (list.length > 20) throw new Error(`${method}: alarmId 一次最多 20 个`);
+  return list.join(',');
+}
+
+function toAlarmTime(value: Date | string): string {  if (typeof value === 'string') return value;
   const pad = (n: number) => String(n).padStart(2, '0');
   return (
     `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}` +
@@ -503,7 +576,13 @@ function assertWindows(start: string, end: string): void {
   }
 }
 
-/** 统计 */
+/**
+ * 统计.
+ *
+ * 方法名是 `GET_BOXES_*`（BOX + ES），**不是** `GET_BOXS_*`。
+ * 两者只差一个字母，但平台对错误拼写的回答是「接口名称(X)无效！」，
+ * 极易被误判成「接口未开通」。已对真实服务器逐个验证过。
+ */
 export class StatsApi extends ApiBase {
   private period(method: string, args: {
     mac: string | string[];
@@ -519,19 +598,22 @@ export class StatsApi extends ApiBase {
     );
   }
 
-  /** 日统计 — 不传 day 返回当月每天 */
+  /**
+   * 日区间统计 GET_BOXES_DAY_STATS.
+   * 不传 `day` 时返回当月每天的数据。
+   */
   day(args: { mac: string | string[]; year: string; month: string; day?: string; projectCode?: string }): Promise<BoxStatsByMac | BoxStatsByMacAndPeriod> {
-    return this.period('GET_BOXS_DAY_STATS', args) as Promise<BoxStatsByMac | BoxStatsByMacAndPeriod>;
+    return this.period('GET_BOXES_DAY_STATS', args) as Promise<BoxStatsByMac | BoxStatsByMacAndPeriod>;
   }
 
-  /** 小时统计 */
+  /** 小时区间统计 GET_BOXES_HOUR_STATS. */
   hour(args: { mac: string | string[]; year: string; month: string; day: string; projectCode?: string }): Promise<BoxStatsByMac> {
-    return this.period('GET_BOXS_HOUR_STATS', args) as Promise<BoxStatsByMac>;
+    return this.period('GET_BOXES_HOUR_STATS', args) as Promise<BoxStatsByMac>;
   }
 
-  /** 月统计 */
+  /** 月区间统计 GET_BOXES_MON_STATS. */
   month(args: { mac: string | string[]; year: string; projectCode?: string }): Promise<BoxStatsByMac> {
-    return this.call('GET_BOXS_MON_STATS', { mac: ApiBase.list(args.mac), year: args.year }, args.projectCode) as Promise<BoxStatsByMac>;
+    return this.call('GET_BOXES_MON_STATS', { mac: ApiBase.list(args.mac), year: args.year }, args.projectCode) as Promise<BoxStatsByMac>;
   }
 
   /** Sum of `electricity` for a day across circuits (addr=0 row is the device total). */
@@ -550,6 +632,97 @@ export class SceneApi extends ApiBase {
 
   execute(args: { sceneId: string; params?: Record<string, ParamValue>; projectCode?: string }): Promise<unknown> {
     return this.call('SCENE_SERVICE', { cmd: 'SCENE_EXEC', sceneId: args.sceneId, ...(args.params ?? {}) }, args.projectCode);
+  }
+}
+
+/**
+ * 第三方设备（烟感/燃气/水表/温湿度等，即 equipmentType ≠ 1/2 的设备）。
+ *
+ * 这些设备没有「线路」概念，状态通过 GET_THR_DEVICE_STATUS 按消息类型返回。
+ */
+export class ThirdPartyDeviceApi extends ApiBase {
+  /**
+   * 获取第三方设备状态 GET_THR_DEVICE_STATUS.
+   *
+   * @param args.equipmentType 必填，且必须是**第三方**设备类型
+   *   （4/5/6/7/10/11/12/13/14/16/29/39/42/45）。传 1 或 2 会被平台以
+   *   「设备类型无效！」拒绝——微断请用 {@link ChannelApi.realtime}。
+   * @param args.dataType 仅智能水表(16)必填：0 实时抄表 / 1 时间范围
+   * @param args.startDate / endDate `dataType=1` 时必填，格式 yyyy-MM-dd
+   */
+  status(args: {
+    mac: string;
+    equipmentType: ThirdPartyEquipmentType | number;
+    dataType?: MeterQueryType | number;
+    startDate?: string;
+    endDate?: string;
+    projectCode?: string;
+  }): Promise<ThirdPartyDeviceStatus[]> {
+    const type = Number(args.equipmentType);
+    if (type === 1 || type === 2) {
+      throw new Error(
+        'equipmentType 1（微断）/ 2（电气火灾）不支持 GET_THR_DEVICE_STATUS，请使用 channel.realtime()',
+      );
+    }
+    if (type === ThirdPartyEquipmentType.SmartWaterMeter && args.dataType === undefined) {
+      throw new Error('智能水表(equipmentType=16)必须指定 dataType（0 实时 / 1 时间范围）');
+    }
+    if (args.dataType === MeterQueryType.Range && (!args.startDate || !args.endDate)) {
+      throw new Error('dataType=1 时必须提供 startDate 与 endDate（yyyy-MM-dd）');
+    }
+
+    return this.call<ThirdPartyDeviceStatus[]>(
+      'GET_THR_DEVICE_STATUS',
+      {
+        mac: args.mac,
+        equipmentType: type,
+        dataType: args.dataType,
+        startDate: args.startDate,
+        endDate: args.endDate,
+      },
+      args.projectCode,
+    );
+  }
+
+  /**
+   * 同上，但把每条记录的 `data` JSON 字符串解析成对象，
+   * 便于直接绑定到 UI（解析失败时保留原始字符串）。
+   */
+  async statusParsed(args: Parameters<ThirdPartyDeviceApi['status']>[0]): Promise<
+    (Omit<ThirdPartyDeviceStatus, 'data'> & { data: unknown })[]
+  > {
+    const rows = await this.status(args);
+    return rows.map((r) => ({ ...r, data: parseThirdPartyData(r.data) }));
+  }
+
+  /** 列出项目中某类型的第三方设备（从 GET_BOXES 过滤）。 */
+  async listDevices(args: {
+    equipmentType: ThirdPartyEquipmentType | number;
+    projectCode?: string;
+  }): Promise<Box[]> {
+    const boxes = await this.call<Box[]>(
+      'GET_BOXES',
+      { equipmentType: Number(args.equipmentType) },
+      args.projectCode,
+    );
+    return boxes.filter((b) => Number(b.equipmentType) === Number(args.equipmentType));
+  }
+}
+
+/**
+ * 解析第三方设备 status 的 `data` 字段。
+ * 该字段是 JSON 字符串；个别设备会返回纯数字（如 `"0"`），此时原样返回。
+ */
+export function parseThirdPartyData(raw: unknown): unknown {
+  if (typeof raw !== 'string') return raw;
+  const text = raw.trim();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    // 纯数字/布尔字面量也算合法负载
+    if (/^-?\d+(\.\d+)?$/.test(text)) return Number(text);
+    return text;
   }
 }
 

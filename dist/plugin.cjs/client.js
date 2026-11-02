@@ -47,6 +47,7 @@ class ElectricOpenPlatformClient {
         this.stats = new api_js_1.StatsApi(router);
         this.scene = new api_js_1.SceneApi(router);
         this.push = new push_js_1.PushApi(router);
+        this.thirdparty = new api_js_1.ThirdPartyDeviceApi(router);
         await auth.restore();
     }
     /** True once `configure()` succeeded. */
