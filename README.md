@@ -28,6 +28,57 @@ npx cap sync
 `@capacitor/preferences` 是可选的（`peerDependenciesMeta.optional`）：不装时插件自动退回
 `localStorage` 或内存存储。推荐装上，token 才能跨重启安全保存。
 
+> 目前两个包都可以直接从 GitHub 安装（`npm install github:lanyangayang/cordova-mantunsci-electric`）。
+> 想从 npm 官方源安装、或用 `cordova plugin add cordova-plugin-mantunsci-electric` 一条命令装，
+> 见下方「发布到 npm」。
+
+## 发布到 npm
+
+本仓库发布**两个** npm 包，版本必须一致（`node scripts/check-versions.mjs` 会校验）：
+
+| # | 包名 | 目录 | 用途 |
+| --- | --- | --- | --- |
+| 1 | `@mantunsci/cordova-electric-open-platform` | 仓库根 | Capacitor / ESM 形态，`import` 用 |
+| 2 | `cordova-plugin-mantunsci-electric` | `cordova/` | Cordova 形态，`cordova plugin add` 用 |
+
+### 首次发布（手动）
+
+```bash
+# 0) 登录（需要已拥有 @mantunsci 这个 scope：npmjs.com → Add Organization，
+#    公开包免费；若没有该 scope，npm publish 会报 404 Scope not found）
+npm login
+
+# 1) 版本一致性
+node scripts/check-versions.mjs
+
+# 2) 发布 Capacitor 包（scoped 包必须显式 --access public，否则默认私有要收费）
+npm publish --access public
+
+# 3) 发布 Cordova 包
+cd cordova && npm publish --access public
+```
+
+### 之后每次发版（推荐：打 tag 自动发）
+
+工作流 `.github/workflows/publish-npm.yml` 已就绪：
+
+```bash
+# 1) 改版本：package.json / cordova/package.json / cordova/plugin.xml 三处
+node scripts/check-versions.mjs 0.2.4     # 本地先校验
+
+# 2) 提交、打 tag、推送
+git commit -am "chore(release): v0.2.4"
+git tag v0.2.4
+git push && git push --tags
+```
+
+CI 会依次：装依赖 → 跑 108 个单测 → 重建产物并校验产物已提交 → 校验三处版本一致
+→ 打包自检 → 发布两个包（已发布过的版本自动跳过，便于重跑）。
+
+**必须先配一个 secret**：仓库 Settings → Secrets and variables → Actions →
+`NPM_TOKEN`，值取 npmjs.com → Access Tokens → **Automation**（Automation 类型可绕过 2FA；
+普通 Publish token 在有 2FA 时会被拒）。
+
 ## 快速开始
 
 ```ts

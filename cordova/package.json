@@ -20,6 +20,14 @@
   ],
   "author": "ACME 毅丰电器",
   "license": "MIT",
+  "files": [
+    "plugin.xml",
+    "www/",
+    "src/android/",
+    "src/ios/",
+    "types/",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/lanyangayang/cordova-mantunsci-electric.git",
