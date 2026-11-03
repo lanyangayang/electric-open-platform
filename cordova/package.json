@@ -1,0 +1,28 @@
+{
+  "name": "cordova-plugin-mantunsci-electric",
+  "version": "0.2.3",
+  "description": "智慧式用电数据开放平台（open.snd02.com）Cordova 插件：OAuth2 token 生命周期、MD5 参数签名、全部 router.as 接口封装。与同仓库的 Capacitor 形态共用同一套核心逻辑。",
+  "cordova": {
+    "id": "cordova-plugin-mantunsci-electric",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "cordova-plugin",
+    "electric",
+    "snd02",
+    "mantunsci",
+    "iot",
+    "smart-power"
+  ],
+  "author": "ACME 毅丰电器",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lanyangayang/cordova-mantunsci-electric.git",
+    "directory": "cordova"
+  }
+}
