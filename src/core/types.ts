@@ -21,11 +21,16 @@ export interface ElectricConfig {
   password?: string;
   /** Where tokens are persisted. Default `auto`. */
   storage?: StorageMode;
+  /**
+   * 显式指定网络传输实现。留空则按宿主自动选择
+   * （Cordova → 原生桥，Capacitor 原生 → CapacitorHttp，其它 → fetch）。
+   */
+  transport?: import('./transport.js').Transport;
   /** Called for every request/response when set. Console-friendly. */
   logger?: ElectricLogger;
 }
 
-export type StorageMode = 'auto' | 'preferences' | 'localStorage' | 'memory';
+export type StorageMode = 'auto' | 'preferences' | 'cordova' | 'localStorage' | 'memory';
 
 export type ElectricLogger = (event: ElectricLogEvent) => void;
 

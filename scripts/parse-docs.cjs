@@ -7,8 +7,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const SRC = 'C:/Users/Administrator/Desktop/capacitor-mantunsci-electric/_docs2';
-const OUT = 'C:/Users/Administrator/Desktop/capacitor-mantunsci-electric/_docs2_txt';
+const ROOT = path.resolve(__dirname, '..');
+const SRC = path.join(ROOT, '_docs2');
+const OUT = path.join(ROOT, '_docs2_txt');
 
 /** 把「UTF-8 字节被当成 Latin1 字符」的字符串还原成正常文本。 */
 function fixDoubleEncoded(s) {

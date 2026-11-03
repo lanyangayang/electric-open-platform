@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-plugin-mantunsci-electric"
+        version="0.2.0">
+
+    <name>mantunsci-electric-open-platform</name>
+    <description>
+        智慧式用电数据开放平台（open.snd02.com）Cordova 插件。
+        OAuth2 token 生命周期、MD5 参数签名、全部 router.as 接口封装。
+        与同仓库的 Capacitor 插件共用同一套核心逻辑。
+    </description>
+    <license>MIT</license>
+    <keywords>cordova,electric,snd02,mantunsci,iot,smart-power</keywords>
+
+    <engines>
+        <engine name="cordova" version=">=9.0.0" />
+        <engine name="cordova-android" version=">=10.0.0" />
+    </engines>
+
+    <!-- 全局命名：window.ElectricOpenPlatform 与 cordova.plugins.electricOpenPlatform -->
+    <js-module src="www/electric-open-platform.js" name="ElectricOpenPlatform">
+        <clobbers target="ElectricOpenPlatform" />
+        <clobbers target="cordova.plugins.electricOpenPlatform" />
+    </js-module>
+
+    <!-- ======================= Android ======================= -->
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="ElectricOpenPlatform">
+                <param name="android-package" value="com.mantunsci.cordova.electric.ElectricOpenPlatformPlugin" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        </config-file>
+
+        <source-file src="src/android/ElectricOpenPlatformPlugin.java"
+                     target-dir="src/com/mantunsci/cordova/electric" />
+        <source-file src="src/android/TokenStorage.java"
+                     target-dir="src/com/mantunsci/cordova/electric" />
+    </platform>
+
+    <!-- ======================= iOS ======================= -->
+    <platform name="ios">
+        <config-file target="config.xml" parent="/*">
+            <feature name="ElectricOpenPlatform">
+                <param name="ios-package" value="ElectricOpenPlatformPlugin" />
+            </feature>
+        </config-file>
+
+        <source-file src="src/ios/ElectricOpenPlatformPlugin.swift" />
+    </platform>
+
+    <!-- ======================= 浏览器（便于调试） ======================= -->
+    <platform name="browser">
+        <js-module src="www/browser-shim.js" name="browserShim">
+            <runs />
+        </js-module>
+    </platform>
+</plugin>

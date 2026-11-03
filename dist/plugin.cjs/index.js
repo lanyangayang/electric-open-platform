@@ -20,7 +20,7 @@ exports.PushApi = exports.parseThirdPartyData = exports.ThirdPartyDeviceApi = ex
  * Capacitor plugin for the Mtsci 智慧式用电数据开放平台 (open.snd02.com).
  *
  * ```ts
- * import { ElectricOpenPlatform } from '@mantunsci/capacitor-electric-open-platform';
+ * import { ElectricOpenPlatform } from '@mantunsci/cordova-electric-open-platform';
  *
  * await ElectricOpenPlatform.configure({
  *   appKey: 'O000093290',

@@ -4,7 +4,7 @@
  * Everything is composed here so the public surface stays a single object:
  *
  * ```ts
- * import { ElectricOpenPlatform } from '@mantunsci/capacitor-electric-open-platform';
+ * import { ElectricOpenPlatform } from '@mantunsci/cordova-electric-open-platform';
  *
  * await ElectricOpenPlatform.configure({ appKey, appSecret, redirectUri, projectCode });
  * await ElectricOpenPlatform.login('yfdq01', '******');

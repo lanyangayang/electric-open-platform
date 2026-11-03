@@ -4,9 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // The plugin funnels every request through `postForm`, so mocking that single
 // seam exercises signing, token handling and envelope unwrapping end to end.
 const postFormMock = vi.fn();
-vi.mock('../src/core/http', () => ({
-  postForm: (req: unknown) => postFormMock(req),
-}));
+vi.mock('../src/core/http', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/core/http')>();
+  // 只替换传输实现，保留 setTransport / 常量等导出，
+  // 否则 configure() 内部调用 setTransport 会报 "No export defined"。
+  return { ...actual, postForm: (req: unknown) => postFormMock(req) };
+});
 
 import { AuthManager } from '../src/core/auth';
 import { ElectricOpenPlatformError, PlatformCodes, TransportCodes } from '../src/core/errors';

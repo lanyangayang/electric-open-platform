@@ -1,21 +1,27 @@
-# @mantunsci/capacitor-electric-open-platform
+# @mantunsci/cordova-electric-open-platform
 
-面向 **智慧式用电数据开放平台**（Mtsci Open Platform，`open.snd02.com`）的 Capacitor 插件。
-纯 JS 实现（无原生代码），一行 `configure()` 后即可调用平台全部 `router.as` 接口。
+面向 **智慧式用电数据开放平台**（Mtsci Open Platform，`open.snd02.com`）的插件。
+同一套核心逻辑，同时提供 **Capacitor** 与 **Cordova** 两种形态。
 
 - **OAuth2 全流程**：headless 登录（`authverify2.as`）与重定向登录两种授权方式，`accessToken` / `refreshToken` 自动维护与提前续期，并发请求只刷新一次。
 - **签名自动完成**：按平台规范对参数名排序、拼接参数值、追加 `appSecret` 做 MD5，业务代码无需关心。
-- **CORS 无关**：iOS / Android 走 `CapacitorHttp` 原生请求；Web 走 `fetch`，行为一致。
+- **CORS 无关**：Capacitor 走 `CapacitorHttp`、Cordova 走原生 `HttpURLConnection`/`URLSession`，Web 走 `fetch`，行为一致。
 - **类型完整**：全部枚举、字段（含 `aTUp` / `mxgl` 这类线上原始字段名）与 `.d.ts` 声明。
 - **错误可编排**：统一 `ElectricOpenPlatformError`，携带平台返回码，可判断「设备离线」「token 过期」「接口未开通」等。
 - **已对真实平台联调验证**：见 [验证结果](#已验证行为)。
+
+> **用 Cordova？** 见 [cordova/README.md](./cordova/README.md)。
+> ```bash
+> cordova plugin add /path/to/cordova-mantunsci-electric/cordova
+> ```
+> 之后用全局对象 `ElectricOpenPlatform` / `cordova.plugins.electricOpenPlatform`，接口与本文完全一致。
 
 ---
 
 ## 安装
 
 ```bash
-npm install @mantunsci/capacitor-electric-open-platform @capacitor/preferences
+npm install @mantunsci/cordova-electric-open-platform @capacitor/preferences
 npx cap sync
 ```
 
@@ -25,7 +31,7 @@ npx cap sync
 ## 快速开始
 
 ```ts
-import { ElectricOpenPlatform } from '@mantunsci/capacitor-electric-open-platform';
+import { ElectricOpenPlatform } from '@mantunsci/cordova-electric-open-platform';
 
 // 1) 配置（appSecret 不要写进源码，见「安全」）
 await ElectricOpenPlatform.configure({
@@ -158,7 +164,7 @@ await ElectricOpenPlatform.handleRedirect('http://yourserverurl/receive?code=xxx
 | `listDevices({equipmentType})` | `GET_BOXES` 按类型过滤 |
 
 ```ts
-import { ThirdPartyEquipmentType, MeterQueryType } from '@mantunsci/capacitor-electric-open-platform';
+import { ThirdPartyEquipmentType, MeterQueryType } from '@mantunsci/cordova-electric-open-platform';
 
 // 感烟
 const rows = await ElectricOpenPlatform.thirdparty.statusParsed({
@@ -195,7 +201,7 @@ const data = await ElectricOpenPlatform.invoke<MyType>('NEW_METHOD', { foo: 'bar
 ## 错误处理
 
 ```ts
-import { ElectricOpenPlatformError, PlatformCodes, TransportCodes } from '@mantunsci/capacitor-electric-open-platform';
+import { ElectricOpenPlatformError, PlatformCodes, TransportCodes } from '@mantunsci/cordova-electric-open-platform';
 
 try {
   await ElectricOpenPlatform.control.switchCircuit({ mac, action: 'open', addr: 1 });
@@ -294,15 +300,15 @@ npm run demo      # 打开 http://localhost:5178 调试台
 ## 在 Ionic/Angular 项目里接入
 
 ```bash
-npm install ../capacitor-mantunsci-electric   # 本地联调
-# 或 npm install @mantunsci/capacitor-electric-open-platform
+npm install ../cordova-mantunsci-electric   # 本地联调
+# 或 npm install @mantunsci/cordova-electric-open-platform
 npx cap sync
 ```
 
 ```ts
 // app.module.ts 里注册 service 后，页面中：
 import { Injectable } from '@angular/core';
-import { ElectricOpenPlatform } from '@mantunsci/capacitor-electric-open-platform';
+import { ElectricOpenPlatform } from '@mantunsci/cordova-electric-open-platform';
 
 @Injectable({ providedIn: 'root' })
 export class PowerApiService {

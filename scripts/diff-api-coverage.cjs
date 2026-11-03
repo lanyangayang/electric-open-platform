@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = 'C:/Users/Administrator/Desktop/capacitor-mantunsci-electric';
+const ROOT = path.resolve(__dirname, '..');
 const TXT_DIR = path.join(ROOT, '_docs2_txt');
 const SRC_DIR = path.join(ROOT, 'src/core');
 

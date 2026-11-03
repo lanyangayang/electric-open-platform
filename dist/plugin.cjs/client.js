@@ -7,7 +7,7 @@ exports.ElectricOpenPlatform = exports.ElectricOpenPlatformClient = void 0;
  * Everything is composed here so the public surface stays a single object:
  *
  * ```ts
- * import { ElectricOpenPlatform } from '@mantunsci/capacitor-electric-open-platform';
+ * import { ElectricOpenPlatform } from '@mantunsci/cordova-electric-open-platform';
  *
  * await ElectricOpenPlatform.configure({ appKey, appSecret, redirectUri, projectCode });
  * await ElectricOpenPlatform.login('yfdq01', '******');
@@ -16,6 +16,8 @@ exports.ElectricOpenPlatform = exports.ElectricOpenPlatformClient = void 0;
  */
 const api_js_1 = require("./core/api.js");
 const auth_js_1 = require("./core/auth.js");
+const http_js_1 = require("./core/http.js");
+const host_js_1 = require("./core/host.js");
 const push_js_1 = require("./core/push.js");
 const router_js_1 = require("./core/router.js");
 const storage_js_1 = require("./core/storage.js");
@@ -37,6 +39,9 @@ class ElectricOpenPlatformClient {
         const store = new storage_js_1.TokenStore(backend, config.appKey);
         const auth = new auth_js_1.AuthManager(store, config);
         const router = new router_js_1.RouterClient(config, auth, () => this.credentials);
+        // 按宿主选择网络传输：
+        //   config.transport（最高）> 调用方 setTransport 注入的实现 > 宿主探测
+        (0, http_js_1.setTransport)(await (0, host_js_1.resolveTransport)(config.transport, (0, http_js_1.hasExplicitTransport)() ? (0, http_js_1.currentTransport)() : undefined));
         this.auth = auth;
         this.router = router;
         this.project = new api_js_1.ProjectApi(router);
@@ -114,6 +119,10 @@ class ElectricOpenPlatformClient {
             baseUrl: c.baseUrl ?? 'https://open.snd02.com',
             projectCode: c.projectCode,
             storage: c.storage ?? 'auto',
+            /** 运行宿主：cordova / capacitor-native / web / node */
+            host: (0, host_js_1.detectHost)(),
+            /** 实际生效的网络传输实现 */
+            transport: (0, http_js_1.currentTransportName)(),
             token: this.auth?.current
                 ? { ...this.auth.current, accessToken: mask(this.auth.current.accessToken) }
                 : null,

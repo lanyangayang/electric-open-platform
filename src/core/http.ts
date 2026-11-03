@@ -1,114 +1,59 @@
 /**
- * HTTP transport.
+ * 兼容入口：保留 `postForm` 这一函数式 API。
  *
- * Why not `fetch` directly in an app: calling `https://open.snd02.com` from a
- * WebView origin (`capacitor://localhost`, `http://localhost`) is a cross-origin
- * request. The platform does not send CORS headers, so plain `fetch` fails on
- * device and in the browser. `CapacitorHttp` performs the request natively,
- * bypassing CORS entirely and behaving identically on iOS/Android/Web.
+ * 历史上所有调用都走 `postForm`，现在它转发到「当前选定的 Transport」。
+ * 这样：
+ *  - 既有调用点与测试无需改动；
+ *  - Capacitor / Cordova / fetch 的差异被收敛到 transport-*.ts；
+ *  - 宿主可用 `setTransport()` 显式指定实现。
  */
-import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { ElectricOpenPlatformError, TransportCodes } from './errors.js';
+import { Transport, HttpRequest, HttpResponse } from './transport.js';
+import { createFetchTransport } from './transport-fetch.js';
 
-export interface HttpRequest {
-  url: string;
-  /** form-urlencoded body. */
-  body: string;
-  headers?: Record<string, string>;
-  timeoutMs?: number;
-  signal?: AbortSignal;
+export type { HttpRequest, HttpResponse, Transport } from './transport.js';
+export { parseBody, assertHttpOk, DEFAULT_TIMEOUT_MS } from './transport.js';
+export { createFetchTransport } from './transport-fetch.js';
+export { createCordovaTransport, CORDOVA_PLUGIN_ID } from './transport-cordova.js';
+export { createCapacitorTransport } from './transport-capacitor.js';
+
+let current: Transport = createFetchTransport();
+/** 是否由调用方显式 setTransport 指定过（区别于默认的 fetch）。 */
+let explicit = false;
+
+/** 当前实际使用的传输实现名称，供诊断使用。 */
+export function currentTransportName(): string {
+  return current.name;
 }
 
-export interface HttpResponse {
-  status: number;
-  /** Response body already parsed when it was JSON, otherwise the raw string. */
-  data: unknown;
-  raw: string;
+/** 当前传输实现的引用。 */
+export function currentTransport(): Transport {
+  return current;
 }
 
-const DEFAULT_TIMEOUT_MS = 20_000;
-
-function parseBody(raw: string): unknown {
-  const trimmed = raw.trim();
-  if (trimmed === '') return null;
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return raw;
-  }
+/** 调用方是否显式设置过传输实现。 */
+export function hasExplicitTransport(): boolean {
+  return explicit;
 }
 
-/**
- * Sends a form-urlencoded POST and returns the parsed body.
- *
- * Uses native HTTP on iOS/Android (no CORS, no cookie jar surprises) and falls
- * back to `fetch` on web. Both paths funnel through the same error mapping, so
- * callers never have to care which one ran.
- */
-export async function postForm(req: HttpRequest): Promise<HttpResponse> {
-  if (req.signal?.aborted) {
-    throw new ElectricOpenPlatformError(TransportCodes.ABORTED, '请求已取消');
-  }
+/** 替换传输实现（插件在 configure 时按宿主环境自动选择）。 */
+export function setTransport(transport: Transport): void {
+  current = transport;
+  explicit = true;
+}
 
-  const headers = {
-    'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
-    Accept: 'application/json, text/plain, */*',
-    ...req.headers,
-  };
+/** 恢复默认的 fetch 实现（测试用）。 */
+export function resetTransport(): void {
+  current = createFetchTransport();
+  explicit = false;
+}
 
-  const timeoutMs = req.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-
-  if (Capacitor.isNativePlatform()) {
-    const res = await CapacitorHttp.post({
-      url: req.url,
-      headers,
-      data: req.body,
-      connectTimeout: timeoutMs,
-      readTimeout: timeoutMs,
-      responseType: 'text',
-    });
-    const raw = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-    if (res.status < 200 || res.status >= 300) {
-      throw new ElectricOpenPlatformError(
-        TransportCodes.HTTP,
-        `服务器返回 HTTP ${res.status}`,
-        { httpStatus: res.status, details: raw },
-      );
-    }
-    return { status: res.status, data: parseBody(raw), raw };
-  }
-
-  // Web / Node: AbortController gives us a browser-independent timeout.
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const onAbort = () => controller.abort();
-  req.signal?.addEventListener('abort', onAbort);
-
-  try {
-    const res = await fetch(req.url, {
-      method: 'POST',
-      headers,
-      body: req.body,
-      signal: controller.signal,
-    });
-    const raw = await res.text();
-    if (!res.ok) {
-      throw new ElectricOpenPlatformError(TransportCodes.HTTP, `服务器返回 HTTP ${res.status}`, {
-        httpStatus: res.status,
-        details: raw,
-      });
-    }
-    return { status: res.status, data: parseBody(raw), raw };
-  } catch (err) {
-    if (err instanceof ElectricOpenPlatformError) throw err;
-    const aborted = (err as Error)?.name === 'AbortError';
-    throw new ElectricOpenPlatformError(
-      aborted ? TransportCodes.ABORTED : TransportCodes.NETWORK,
-      aborted ? '请求超时或已取消' : `网络请求失败：${(err as Error)?.message ?? err}`,
-      { cause: err },
+/** 用当前传输发送一次 form-urlencoded POST。 */
+export function postForm(req: HttpRequest): Promise<HttpResponse> {
+  if (!current) {
+    return Promise.reject(
+      new ElectricOpenPlatformError(TransportCodes.NETWORK, '未配置网络传输实现'),
     );
-  } finally {
-    clearTimeout(timer);
-    req.signal?.removeEventListener('abort', onAbort);
   }
+  return current.postForm(req);
 }

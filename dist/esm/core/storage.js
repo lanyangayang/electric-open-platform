@@ -59,6 +59,48 @@ async function preferencesBackend() {
         return null;
     }
 }
+/**
+ * Cordova 原生存储（Android SharedPreferences / iOS UserDefaults）。
+ *
+ * 由插件原生部分提供 `storageGet` / `storageSet` / `storageRemove` 三个动作。
+ * 找不到原生桥时返回 null，调用方退回 localStorage。
+ */
+async function cordovaBackend() {
+    const g = globalThis;
+    const exec = g.cordova?.exec;
+    if (typeof exec !== 'function')
+        return null;
+    const call = (action, args) => new Promise((resolve, reject) => {
+        try {
+            exec(resolve, reject, 'ElectricOpenPlatform', action, args);
+        }
+        catch (err) {
+            reject(err);
+        }
+    });
+    try {
+        // 探活：能取到（哪怕 null）就说明原生动作存在
+        await call('storageGet', [{ key: '__eop_probe__' }]);
+    }
+    catch {
+        return null;
+    }
+    return {
+        name: 'cordova-preferences',
+        async get(key) {
+            const res = (await call('storageGet', [{ key }]));
+            if (res && typeof res === 'object' && 'value' in res)
+                return res.value ?? null;
+            return typeof res === 'string' ? res : null;
+        },
+        async set(key, value) {
+            await call('storageSet', [{ key, value }]);
+        },
+        async remove(key) {
+            await call('storageRemove', [{ key }]);
+        },
+    };
+}
 let resolved = null;
 export async function resolveBackend(mode = 'auto') {
     if (mode === 'memory')
@@ -67,10 +109,14 @@ export async function resolveBackend(mode = 'auto') {
         return localStorageBackend() ?? memoryBackend;
     if (mode === 'preferences')
         return (await preferencesBackend()) ?? memoryBackend;
+    if (mode === 'cordova')
+        return (await cordovaBackend()) ?? localStorageBackend() ?? memoryBackend;
     if (resolved)
         return resolved;
+    // auto：Cordova 原生存储 → Capacitor Preferences → localStorage → 内存
     resolved =
-        (await preferencesBackend()) ??
+        (await cordovaBackend()) ??
+            (await preferencesBackend()) ??
             localStorageBackend() ??
             memoryBackend;
     return resolved;

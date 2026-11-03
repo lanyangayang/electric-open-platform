@@ -5,13 +5,15 @@
  * access token. On a Capacitor app the device *is* that controller, so tokens are
  * persisted across app restarts and renewed with the refresh token.
  *
- * Ordering preference: `@capacitor/preferences` (native shared prefs / user
- * defaults, works on web too) → `localStorage` → in-memory. The dependency is
- * optional, so a bare install without the Preferences plugin still works.
+ * Ordering preference: Cordova 原生存储（SharedPreferences / UserDefaults）→
+ * `@capacitor/preferences`（native shared prefs / user defaults，works on web too）
+ * → `localStorage` → in-memory. Both native backends are optional, so a bare
+ * install without either plugin still works.
  */
 import { StorageMode } from './types.js';
 interface KeyValueBackend {
-    readonly name: StorageMode | 'none';
+    /** `cordova-preferences` 是 cordova 模式下的具体实现名。 */
+    readonly name: StorageMode | 'cordova-preferences' | 'none';
     get(key: string): Promise<string | null>;
     set(key: string, value: string): Promise<void>;
     remove(key: string): Promise<void>;

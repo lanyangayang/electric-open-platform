@@ -5,14 +5,16 @@
  * access token. On a Capacitor app the device *is* that controller, so tokens are
  * persisted across app restarts and renewed with the refresh token.
  *
- * Ordering preference: `@capacitor/preferences` (native shared prefs / user
- * defaults, works on web too) → `localStorage` → in-memory. The dependency is
- * optional, so a bare install without the Preferences plugin still works.
+ * Ordering preference: Cordova 原生存储（SharedPreferences / UserDefaults）→
+ * `@capacitor/preferences`（native shared prefs / user defaults，works on web too）
+ * → `localStorage` → in-memory. Both native backends are optional, so a bare
+ * install without either plugin still works.
  */
 import { StorageMode } from './types.js';
 
 interface KeyValueBackend {
-  readonly name: StorageMode | 'none';
+  /** `cordova-preferences` 是 cordova 模式下的具体实现名。 */
+  readonly name: StorageMode | 'cordova-preferences' | 'none';
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<void>;
   remove(key: string): Promise<void>;
@@ -80,15 +82,71 @@ async function preferencesBackend(): Promise<KeyValueBackend | null> {
   }
 }
 
+/**
+ * Cordova 原生存储（Android SharedPreferences / iOS UserDefaults）。
+ *
+ * 由插件原生部分提供 `storageGet` / `storageSet` / `storageRemove` 三个动作。
+ * 找不到原生桥时返回 null，调用方退回 localStorage。
+ */
+async function cordovaBackend(): Promise<KeyValueBackend | null> {
+  const g = globalThis as unknown as {
+    cordova?: {
+      exec?: (
+        ok: (d: unknown) => void,
+        fail: (e: unknown) => void,
+        service: string,
+        action: string,
+        args: unknown[],
+      ) => void;
+    };
+  };
+  const exec = g.cordova?.exec;
+  if (typeof exec !== 'function') return null;
+
+  const call = (action: string, args: unknown[]): Promise<unknown> =>
+    new Promise((resolve, reject) => {
+      try {
+        exec(resolve, reject, 'ElectricOpenPlatform', action, args);
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+  try {
+    // 探活：能取到（哪怕 null）就说明原生动作存在
+    await call('storageGet', [{ key: '__eop_probe__' }]);
+  } catch {
+    return null;
+  }
+
+  return {
+    name: 'cordova-preferences',
+    async get(key) {
+      const res = (await call('storageGet', [{ key }])) as { value?: string | null } | string | null;
+      if (res && typeof res === 'object' && 'value' in res) return res.value ?? null;
+      return typeof res === 'string' ? res : null;
+    },
+    async set(key, value) {
+      await call('storageSet', [{ key, value }]);
+    },
+    async remove(key) {
+      await call('storageRemove', [{ key }]);
+    },
+  };
+}
+
 let resolved: KeyValueBackend | null = null;
 
 export async function resolveBackend(mode: StorageMode = 'auto'): Promise<KeyValueBackend> {
   if (mode === 'memory') return memoryBackend;
   if (mode === 'localStorage') return localStorageBackend() ?? memoryBackend;
   if (mode === 'preferences') return (await preferencesBackend()) ?? memoryBackend;
+  if (mode === 'cordova') return (await cordovaBackend()) ?? localStorageBackend() ?? memoryBackend;
 
   if (resolved) return resolved;
+  // auto：Cordova 原生存储 → Capacitor Preferences → localStorage → 内存
   resolved =
+    (await cordovaBackend()) ??
     (await preferencesBackend()) ??
     localStorageBackend() ??
     memoryBackend;
