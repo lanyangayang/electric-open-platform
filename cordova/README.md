@@ -14,15 +14,27 @@ cordova/plugin.xml   ← Cordova 插件清单
 ## 安装
 
 ```bash
-# 从本地目录
+# 本地目录（推荐，已实测 cordova CLI 12.0.0 + cordova-android 15.1.0）
 cordova plugin add /path/to/cordova-mantunsci-electric/cordova
 
-# 或从 Git（插件在仓库的 cordova/ 子目录）
-cordova plugin add https://github.com/lanyangayang/cordova-mantunsci-electric.git#master:cordova
+# 远端/CI：先 clone，再从 clone 出来的子目录装
+git clone https://github.com/lanyangayang/cordova-mantunsci-electric.git /tmp/eop
+cordova plugin add /tmp/eop/cordova
 ```
 
-> 注意：Cordova 的 `plugin add` 需要目录下存在 `plugin.xml`。
-> 本仓库根目录是 Capacitor 包，Cordova 插件在 `cordova/` 子目录。
+> Cordova 12 的 `plugin add` 要求目录下**同时**有 `plugin.xml` 和 `package.json`
+> （后者要带 `cordova.id` / `cordova.platforms`）。`cordova/` 目录两者都齐（0.2.3 起）。
+>
+> ⚠️ **不支持** `cordova plugin add https://github.com/...#master:cordova` 这种
+> 「git URL + 子目录」写法 —— 实测报 `Cannot find plugin.xml for plugin
+> "cordova-electric-open-platform"`。Cordova 只会在**仓库根目录**找 `plugin.xml`，
+> 而本仓库根目录是 Capacitor 包。若要一条命令远程安装，需要把 `cordova/` 目录
+> 单独发布成 npm 包（`cordova-plugin-mantunsci-electric`），之后
+> `cordova plugin add cordova-plugin-mantunsci-electric` 即可。
+>
+> 在 Ionic/Angular 之类有打包链的 Cordova 工程里，如果页面是用 `import` 引用本插件的
+> ESM 形态，还需要额外 `npm install github:lanyangayang/cordova-mantunsci-electric`
+> —— `cordova plugin add` 只负责原生实现与全局对象，不提供 node_modules 里的模块。
 
 安装后 `cordova prepare` 会：
 - 把 `www/electric-open-platform.js` 注入到 App；
