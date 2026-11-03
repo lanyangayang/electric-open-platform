@@ -1,6 +1,6 @@
 {
   "name": "@mantunsci/cordova-electric-open-platform",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Capacitor 与 Cordova 双形态插件：智慧式用电数据开放平台 (open.snd02.com) —— OAuth2 token 生命周期、MD5 参数签名，以及全部 router.as 接口的类型化封装。",
   "main": "dist/plugin.cjs/index.js",
   "module": "dist/esm/index.js",

@@ -48,7 +48,10 @@ function detectHost() {
     // Capacitor 优先：它自带 cordova 兼容层，先判 cordova 会误判（见文件头注释）。
     if (isCapacitorNative())
         return 'capacitor-native';
-    if ((0, transport_cordova_js_1.resolveCordovaExec)())
+    // 有 cordova 全局就算 Cordova 宿主：cordova.js 先挂出 cordova 对象，exec 要
+    // deviceready 之后才补上。只看 exec 会把「已加载 cordova、仍在 deviceready 之前」
+    // 的 App 误判为 web → 选 fetch → 被 WebView 的 CORS 拦死。
+    if ((0, transport_cordova_js_1.hasCordovaGlobal)() || (0, transport_cordova_js_1.resolveCordovaExec)())
         return 'cordova';
     if (typeof globalThis.window !== 'undefined')
         return 'web';

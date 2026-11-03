@@ -924,35 +924,38 @@ var __EOP = (() => {
     const g = globalThis;
     return typeof ((_a = g.cordova) == null ? void 0 : _a.exec) === "function" ? g.cordova.exec : null;
   }
+  function hasCordovaGlobal() {
+    const g = globalThis;
+    return typeof g.cordova !== "undefined" && g.cordova !== null;
+  }
   function createCordovaTransport(options = {}) {
-    var _a;
-    const exec = (_a = options.exec) != null ? _a : resolveCordovaExec();
     return {
       name: "cordova-exec",
       async postForm(req) {
-        var _a2, _b, _c;
+        var _a, _b, _c, _d;
+        const exec = (_a = options.exec) != null ? _a : resolveCordovaExec();
         if (!exec) {
           throw new ElectricOpenPlatformError(
             TransportCodes.NETWORK,
-            "Cordova \u73AF\u5883\u672A\u5C31\u7EEA\uFF08\u627E\u4E0D\u5230 cordova.exec\uFF09\u3002\u8BF7\u786E\u8BA4\u5DF2\u5B89\u88C5\u672C\u63D2\u4EF6\u5E76\u6267\u884C cordova prepare\u3002"
+            "Cordova \u73AF\u5883\u672A\u5C31\u7EEA\uFF08\u627E\u4E0D\u5230 cordova.exec\uFF09\u3002\u8BF7\u786E\u8BA4\u5DF2\u5B89\u88C5\u672C\u63D2\u4EF6\u3001\u5DF2\u6267\u884C cordova prepare\uFF0C\u5E76\u5728 deviceready \u4E4B\u540E\u518D\u8C03\u7528\u3002"
           );
         }
-        if ((_a2 = req.signal) == null ? void 0 : _a2.aborted) {
+        if ((_b = req.signal) == null ? void 0 : _b.aborted) {
           throw new ElectricOpenPlatformError(TransportCodes.ABORTED, "\u8BF7\u6C42\u5DF2\u53D6\u6D88");
         }
         const headers = __spreadValues({
           "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
           Accept: "application/json, text/plain, */*"
         }, req.headers);
-        const timeoutMs = (_b = req.timeoutMs) != null ? _b : DEFAULT_TIMEOUT_MS;
+        const timeoutMs = (_c = req.timeoutMs) != null ? _c : DEFAULT_TIMEOUT_MS;
         const native = await new Promise((resolve, reject) => {
-          var _a3;
+          var _a2;
           try {
             exec(
               (data) => resolve(data != null ? data : {}),
               (err) => {
-                var _a4;
-                const message = typeof err === "string" ? err : (_a4 = err == null ? void 0 : err.message) != null ? _a4 : JSON.stringify(err);
+                var _a3;
+                const message = typeof err === "string" ? err : (_a3 = err == null ? void 0 : err.message) != null ? _a3 : JSON.stringify(err);
                 reject(new ElectricOpenPlatformError(TransportCodes.NETWORK, `\u539F\u751F\u8BF7\u6C42\u5931\u8D25\uFF1A${message}`));
               },
               CORDOVA_PLUGIN_ID,
@@ -963,7 +966,7 @@ var __EOP = (() => {
             reject(
               new ElectricOpenPlatformError(
                 TransportCodes.NETWORK,
-                `\u8C03\u7528\u539F\u751F\u8BF7\u6C42\u5931\u8D25\uFF1A${(_a3 = err == null ? void 0 : err.message) != null ? _a3 : err}`,
+                `\u8C03\u7528\u539F\u751F\u8BF7\u6C42\u5931\u8D25\uFF1A${(_a2 = err == null ? void 0 : err.message) != null ? _a2 : err}`,
                 { cause: err }
               )
             );
@@ -972,7 +975,7 @@ var __EOP = (() => {
         if (native.error) {
           throw new ElectricOpenPlatformError(TransportCodes.NETWORK, `\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25\uFF1A${native.error}`);
         }
-        const raw = (_c = native.body) != null ? _c : "";
+        const raw = (_d = native.body) != null ? _d : "";
         const status = typeof native.status === "number" && native.status > 0 ? native.status : 0;
         if (status === 0) {
           throw new ElectricOpenPlatformError(TransportCodes.NETWORK, "\u539F\u751F\u8BF7\u6C42\u672A\u8FD4\u56DE\u6709\u6548 HTTP \u72B6\u6001");
@@ -1544,7 +1547,7 @@ var __EOP = (() => {
   }
   function detectHost() {
     if (isCapacitorNative()) return "capacitor-native";
-    if (resolveCordovaExec()) return "cordova";
+    if (hasCordovaGlobal() || resolveCordovaExec()) return "cordova";
     if (typeof globalThis.window !== "undefined") return "web";
     return "node";
   }

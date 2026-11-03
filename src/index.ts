@@ -50,7 +50,11 @@ export {
   type Transport,
 } from './core/http.js';
 export { detectHost, resolveTransport, type Host } from './core/host.js';
-export type { CordovaExecLike } from './core/transport-cordova.js';
+export {
+  hasCordovaGlobal,
+  resolveCordovaExec,
+  type CordovaExecLike,
+} from './core/transport-cordova.js';
 export {
   ElectricOpenPlatformError,
   PlatformCodes,

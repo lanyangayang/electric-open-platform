@@ -1,5 +1,5 @@
 import { createFetchTransport } from './transport-fetch.js';
-import { createCordovaTransport, resolveCordovaExec } from './transport-cordova.js';
+import { createCordovaTransport, hasCordovaGlobal, resolveCordovaExec } from './transport-cordova.js';
 import { createCapacitorTransport } from './transport-capacitor.js';
 /** Capacitor 运行时是否认为自己是原生平台（浏览器/Node 里没有全局 Capacitor）。 */
 function isCapacitorNative() {
@@ -11,7 +11,10 @@ export function detectHost() {
     // Capacitor 优先：它自带 cordova 兼容层，先判 cordova 会误判（见文件头注释）。
     if (isCapacitorNative())
         return 'capacitor-native';
-    if (resolveCordovaExec())
+    // 有 cordova 全局就算 Cordova 宿主：cordova.js 先挂出 cordova 对象，exec 要
+    // deviceready 之后才补上。只看 exec 会把「已加载 cordova、仍在 deviceready 之前」
+    // 的 App 误判为 web → 选 fetch → 被 WebView 的 CORS 拦死。
+    if (hasCordovaGlobal() || resolveCordovaExec())
         return 'cordova';
     if (typeof globalThis.window !== 'undefined')
         return 'web';

@@ -24,7 +24,7 @@ export { md5, formatTimestamp, formatAlarmTime } from './core/crypto.js';
 export { signParams, buildSignedRequest, encodeForm, signAuthCodeSecret, signRefreshSecret, type ParamValue, } from './core/sign.js';
 export { postForm, createCapacitorTransport, createCordovaTransport, createFetchTransport, CORDOVA_PLUGIN_ID, setTransport, resetTransport, currentTransport, currentTransportName, hasExplicitTransport, type HttpRequest, type HttpResponse, type Transport, } from './core/http.js';
 export { detectHost, resolveTransport, type Host } from './core/host.js';
-export type { CordovaExecLike } from './core/transport-cordova.js';
+export { hasCordovaGlobal, resolveCordovaExec, type CordovaExecLike, } from './core/transport-cordova.js';
 export { ElectricOpenPlatformError, PlatformCodes, TransportCodes, describeCode, isElectricOpenPlatformError, type PlatformCode, type TransportCode, } from './core/errors.js';
 export { DEFAULT_BASE_URL, type ElectricConfig, type ElectricLogger, type ElectricLogEvent, type StorageMode, type TokenSet, type LoginResult, type ApiEnvelope, } from './core/types.js';
 export { TokenStore, resolveBackend, resetStorageBackend } from './core/storage.js';

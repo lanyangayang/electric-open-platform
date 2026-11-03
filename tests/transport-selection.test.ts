@@ -79,6 +79,23 @@ describe('传输选择优先级', () => {
   });
 
   /**
+   * 回归（0.2.2）：cordova.js 会先挂出 `cordova` 对象，`exec` 要 deviceready 之后
+   * 才补上。只看 `cordova.exec` 会把「已加载 cordova、仍在 deviceready 之前」的 App
+   * 误判成 web 宿主 → 选 fetch → 被 WebView 的 CORS 拦死。
+   */
+  it('cordova 全局已存在但 exec 未就绪时，仍判定为 cordova 宿主', async () => {
+    resetTransport();
+    (globalThis as { cordova?: unknown }).cordova = {}; // 尚无 exec
+
+    expect(detectHost()).toBe('cordova');
+
+    const client = new ElectricOpenPlatformClient();
+    await client.configure(config);
+    expect(currentTransportName()).toBe('cordova-exec');
+    client.dispose();
+  });
+
+  /**
    * 回归测试（0.2.1）：Capacitor 应用自带 Cordova 兼容层，WebView 里
    * `window.cordova.exec` 是存在的，但插件原生类并没有注册。若先判 cordova，
    * 会把纯 Capacitor 工程误判成 Cordova 宿主，真机抛「原生请求失败：Class not found」，

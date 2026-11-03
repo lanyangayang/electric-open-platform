@@ -98,6 +98,34 @@ describe('CordovaTransport', () => {
     });
   });
 
+  /**
+   * 回归（0.2.2）：cordova.exec 要 deviceready 之后才挂上。
+   * 之前 createCordovaTransport 在「创建时」捕获 exec，于是 configure() 早于
+   * deviceready 就会永久拿不到桥，之后所有请求都失败。改为每次请求惰性解析后，
+   * 桥迟到也能自愈。
+   */
+  it('exec 迟到（deviceready 之后才挂上）也能工作', async () => {
+    delete (globalThis as { cordova?: unknown }).cordova;
+    const transport = createCordovaTransport();
+
+    // 就绪前：明确报未就绪
+    await expect(transport.postForm({ url: 'https://x/y', body: '' })).rejects.toMatchObject({
+      code: TransportCodes.NETWORK,
+    });
+
+    // deviceready 之后 exec 挂上，同一个 transport 实例应自动可用
+    const { exec, calls } = makeFakeExec(() => ({ status: 200, body: '{"code":"0","data":{}}' }));
+    (globalThis as { cordova?: unknown }).cordova = { exec };
+    try {
+      const res = await transport.postForm({ url: 'https://x/y', body: 'a=1' });
+      expect(res.status).toBe(200);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].service).toBe('ElectricOpenPlatform');
+    } finally {
+      delete (globalThis as { cordova?: unknown }).cordova;
+    }
+  });
+
   it('已取消的 request 直接拒绝', async () => {
     const { exec } = makeFakeExec(() => ({ status: 200, body: '{}' }));
     const transport = createCordovaTransport({ exec });
