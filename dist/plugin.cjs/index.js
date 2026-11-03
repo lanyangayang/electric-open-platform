@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PushApi = exports.parseThirdPartyData = exports.ThirdPartyDeviceApi = exports.SceneApi = exports.StatsApi = exports.AlarmApi = exports.ControlApi = exports.ChannelApi = exports.BoxApi = exports.ProjectApi = exports.verifyPushKey = exports.RouterClient = exports.AuthManager = exports.resetStorageBackend = exports.resolveBackend = exports.TokenStore = exports.DEFAULT_BASE_URL = exports.isElectricOpenPlatformError = exports.describeCode = exports.TransportCodes = exports.PlatformCodes = exports.ElectricOpenPlatformError = exports.postForm = exports.signRefreshSecret = exports.signAuthCodeSecret = exports.encodeForm = exports.buildSignedRequest = exports.signParams = exports.formatAlarmTime = exports.formatTimestamp = exports.md5 = exports.ElectricOpenPlatformClient = exports.ElectricOpenPlatform = void 0;
+exports.PushApi = exports.parseThirdPartyData = exports.ThirdPartyDeviceApi = exports.SceneApi = exports.StatsApi = exports.AlarmApi = exports.ControlApi = exports.ChannelApi = exports.BoxApi = exports.ProjectApi = exports.verifyPushKey = exports.RouterClient = exports.AuthManager = exports.resetStorageBackend = exports.resolveBackend = exports.TokenStore = exports.DEFAULT_BASE_URL = exports.isElectricOpenPlatformError = exports.describeCode = exports.TransportCodes = exports.PlatformCodes = exports.ElectricOpenPlatformError = exports.resolveTransport = exports.detectHost = exports.hasExplicitTransport = exports.currentTransportName = exports.currentTransport = exports.resetTransport = exports.setTransport = exports.CORDOVA_PLUGIN_ID = exports.createFetchTransport = exports.createCordovaTransport = exports.createCapacitorTransport = exports.postForm = exports.signRefreshSecret = exports.signAuthCodeSecret = exports.encodeForm = exports.buildSignedRequest = exports.signParams = exports.formatAlarmTime = exports.formatTimestamp = exports.md5 = exports.ElectricOpenPlatformClient = exports.ElectricOpenPlatform = void 0;
 /**
  * @packageDocumentation
  * Capacitor plugin for the Mtsci 智慧式用电数据开放平台 (open.snd02.com).
@@ -53,6 +53,20 @@ Object.defineProperty(exports, "signAuthCodeSecret", { enumerable: true, get: fu
 Object.defineProperty(exports, "signRefreshSecret", { enumerable: true, get: function () { return sign_js_1.signRefreshSecret; } });
 var http_js_1 = require("./core/http.js");
 Object.defineProperty(exports, "postForm", { enumerable: true, get: function () { return http_js_1.postForm; } });
+// 传输层：宿主可以显式指定实现（config.transport / setTransport），
+// 避免被 detectHost() 的宿主探测误判。
+Object.defineProperty(exports, "createCapacitorTransport", { enumerable: true, get: function () { return http_js_1.createCapacitorTransport; } });
+Object.defineProperty(exports, "createCordovaTransport", { enumerable: true, get: function () { return http_js_1.createCordovaTransport; } });
+Object.defineProperty(exports, "createFetchTransport", { enumerable: true, get: function () { return http_js_1.createFetchTransport; } });
+Object.defineProperty(exports, "CORDOVA_PLUGIN_ID", { enumerable: true, get: function () { return http_js_1.CORDOVA_PLUGIN_ID; } });
+Object.defineProperty(exports, "setTransport", { enumerable: true, get: function () { return http_js_1.setTransport; } });
+Object.defineProperty(exports, "resetTransport", { enumerable: true, get: function () { return http_js_1.resetTransport; } });
+Object.defineProperty(exports, "currentTransport", { enumerable: true, get: function () { return http_js_1.currentTransport; } });
+Object.defineProperty(exports, "currentTransportName", { enumerable: true, get: function () { return http_js_1.currentTransportName; } });
+Object.defineProperty(exports, "hasExplicitTransport", { enumerable: true, get: function () { return http_js_1.hasExplicitTransport; } });
+var host_js_1 = require("./core/host.js");
+Object.defineProperty(exports, "detectHost", { enumerable: true, get: function () { return host_js_1.detectHost; } });
+Object.defineProperty(exports, "resolveTransport", { enumerable: true, get: function () { return host_js_1.resolveTransport; } });
 var errors_js_1 = require("./core/errors.js");
 Object.defineProperty(exports, "ElectricOpenPlatformError", { enumerable: true, get: function () { return errors_js_1.ElectricOpenPlatformError; } });
 Object.defineProperty(exports, "PlatformCodes", { enumerable: true, get: function () { return errors_js_1.PlatformCodes; } });

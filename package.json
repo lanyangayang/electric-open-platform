@@ -1,7 +1,7 @@
 {
   "name": "@mantunsci/cordova-electric-open-platform",
-  "version": "0.2.0",
-  "description": "Capacitor plugin for the Mtsci 鏅烘収寮忕敤鐢垫暟鎹紑鏀惧钩鍙?(open.snd02.com) 鈥?OAuth2 token lifecycle, MD5 request signing and typed wrappers for the full router.as API.",
+  "version": "0.2.1",
+  "description": "Capacitor 与 Cordova 双形态插件：智慧式用电数据开放平台 (open.snd02.com) —— OAuth2 token 生命周期、MD5 参数签名，以及全部 router.as 接口的类型化封装。",
   "main": "dist/plugin.cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -36,13 +36,15 @@
     "capacitor",
     "plugin",
     "capacitor-plugin",
+    "cordova",
+    "cordova-plugin",
     "iot",
     "electric",
     "snd02",
     "mantunsci",
     "smart-power"
   ],
-  "author": "ACME 姣呬赴鐢靛櫒",
+  "author": "ACME 毅丰电器",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -62,14 +64,6 @@
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.4"
-  },
-  "capacitor": {
-    "android": {
-      "src": "android/src/main/java/com/mantunsci/capacitor/electric/ElectricOpenPlatformPlugin.java"
-    },
-    "ios": {
-      "src": "ios/Sources/ElectricOpenPlatformPlugin/ElectricOpenPlatformPlugin.swift"
-    }
   },
   "cordova": {
     "id": "cordova-plugin-mantunsci-electric",

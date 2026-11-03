@@ -24,7 +24,11 @@ export { ElectricOpenPlatform, ElectricOpenPlatformClient } from './client.js';
 // reuse the primitives in a backend.
 export { md5, formatTimestamp, formatAlarmTime } from './core/crypto.js';
 export { signParams, buildSignedRequest, encodeForm, signAuthCodeSecret, signRefreshSecret, } from './core/sign.js';
-export { postForm } from './core/http.js';
+export { postForm, 
+// 传输层：宿主可以显式指定实现（config.transport / setTransport），
+// 避免被 detectHost() 的宿主探测误判。
+createCapacitorTransport, createCordovaTransport, createFetchTransport, CORDOVA_PLUGIN_ID, setTransport, resetTransport, currentTransport, currentTransportName, hasExplicitTransport, } from './core/http.js';
+export { detectHost, resolveTransport } from './core/host.js';
 export { ElectricOpenPlatformError, PlatformCodes, TransportCodes, describeCode, isElectricOpenPlatformError, } from './core/errors.js';
 export { DEFAULT_BASE_URL, } from './core/types.js';
 export { TokenStore, resolveBackend, resetStorageBackend } from './core/storage.js';

@@ -285,6 +285,47 @@ node scripts/diff-api-coverage.cjs # 文档 vs 实现 覆盖率对照（应为�
 node scripts/diagnose-getbox.mjs   # 对照实验：证明 GET_BOX 是未开通而非签名错
 ```
 
+## 网络传输与宿主探测
+
+插件按宿主自动挑选传输实现，优先级如下：
+
+| 优先级 | 条件 | 传输实现 | 说明 |
+| --- | --- | --- | --- |
+| 1 | `configure({ transport })` | 调用方指定 | 最高优先级；已知宿主时推荐显式指定 |
+| 2 | configure 之前 `setTransport()` | 调用方注入 | 不会被宿主探测覆盖 |
+| 3 | Capacitor 原生平台 | `capacitor-http`（CapacitorHttp） | 绕开 WebView 同源策略；取不到 CapacitorHttp 时回退 cordova-exec / fetch |
+| 4 | 存在 `cordova.exec` | `cordova-exec` | 走本插件的 Cordova 原生桥 |
+| 5 | Web / Node | `fetch` | 浏览器里会受平台 CORS 限制 |
+
+`detectHost()` / `currentTransportName()` 可随时查看当前判定；`describe()` 也会返回 `host` 与 `transport`。
+
+> ⚠️ **0.2.1 起，Capacitor 的判定优先于 `cordova.exec`。**
+> Capacitor 应用自带 Cordova 兼容层，WebView 里 `window.cordova.exec` **是存在的**，但只有真正
+> 装上的 Cordova 插件才有对应的原生类。旧版先判 `cordova.exec`，于是纯 Capacitor 工程被误判成
+> Cordova 宿主，真机报「原生请求失败：Class not found」，而同一份代码在浏览器里反而正常。
+>
+> 若你的宿主环境比较特殊，仍可显式指定传输实现兜底：
+>
+> ```ts
+> import {
+>   ElectricOpenPlatform,
+>   createCapacitorTransport,
+> } from '@mantunsci/cordova-electric-open-platform';
+> import { Capacitor, CapacitorHttp } from '@capacitor/core';
+>
+> await ElectricOpenPlatform.configure({
+>   // ...其它配置
+>   transport: createCapacitorTransport({ Capacitor, CapacitorHttp }),
+> });
+> ```
+
+### 关于 `npx cap sync`
+
+本包在 Capacitor 侧**没有原生代码**：Capacitor 形态是纯 JS，网络请求走 `@capacitor/core` 自带的
+`CapacitorHttp`；原生实现只存在于 `cordova/` 目录，供 Cordova 工程使用。
+因此 `package.json` 不再声明 `capacitor` 字段 —— `npx cap sync` 会直接跳过本包，不会再因为
+不存在的原生工程路径报 `ENOENT ... ElectricOpenPlatformPlugin.java/src/main`。
+
 ## 本地调试
 
 ```bash

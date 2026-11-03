@@ -32,7 +32,25 @@ export {
   signRefreshSecret,
   type ParamValue,
 } from './core/sign.js';
-export { postForm, type HttpRequest, type HttpResponse } from './core/http.js';
+export {
+  postForm,
+  // 传输层：宿主可以显式指定实现（config.transport / setTransport），
+  // 避免被 detectHost() 的宿主探测误判。
+  createCapacitorTransport,
+  createCordovaTransport,
+  createFetchTransport,
+  CORDOVA_PLUGIN_ID,
+  setTransport,
+  resetTransport,
+  currentTransport,
+  currentTransportName,
+  hasExplicitTransport,
+  type HttpRequest,
+  type HttpResponse,
+  type Transport,
+} from './core/http.js';
+export { detectHost, resolveTransport, type Host } from './core/host.js';
+export type { CordovaExecLike } from './core/transport-cordova.js';
 export {
   ElectricOpenPlatformError,
   PlatformCodes,

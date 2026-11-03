@@ -1538,28 +1538,38 @@ var __EOP = (() => {
   };
 
   // src/core/host.ts
-  function detectHost() {
-    if (resolveCordovaExec()) return "cordova";
+  function isCapacitorNative() {
     const cap = globalThis.Capacitor;
-    if (cap && typeof cap.isNativePlatform === "function" && cap.isNativePlatform()) {
-      return "capacitor-native";
-    }
+    return !!cap && typeof cap.isNativePlatform === "function" && cap.isNativePlatform();
+  }
+  function detectHost() {
+    if (isCapacitorNative()) return "capacitor-native";
+    if (resolveCordovaExec()) return "cordova";
     if (typeof globalThis.window !== "undefined") return "web";
     return "node";
+  }
+  async function tryCreateCapacitorTransport() {
+    try {
+      const core = await Promise.resolve().then(() => (init_capacitor_core_stub(), capacitor_core_stub_exports));
+      if (!(core == null ? void 0 : core.CapacitorHttp)) return null;
+      return createCapacitorTransport({
+        Capacitor: core.Capacitor,
+        CapacitorHttp: core.CapacitorHttp
+      });
+    } catch (e) {
+      return null;
+    }
   }
   async function resolveTransport(explicit2, preset) {
     if (explicit2) return explicit2;
     if (preset) return preset;
     const host = detectHost();
-    if (host === "cordova") return createCordovaTransport();
     if (host === "capacitor-native") {
-      try {
-        const core = await Promise.resolve().then(() => (init_capacitor_core_stub(), capacitor_core_stub_exports));
-        return createCapacitorTransport({ Capacitor: core.Capacitor, CapacitorHttp: core.CapacitorHttp });
-      } catch (e) {
-        return createFetchTransport();
-      }
+      const capacitorTransport = await tryCreateCapacitorTransport();
+      if (capacitorTransport) return capacitorTransport;
+      return resolveCordovaExec() ? createCordovaTransport() : createFetchTransport();
     }
+    if (host === "cordova") return createCordovaTransport();
     return createFetchTransport();
   }
 

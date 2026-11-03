@@ -21,6 +21,7 @@ const fakeExec = (ok: (d: unknown) => void) =>
 afterEach(() => {
   resetTransport();
   delete (globalThis as { cordova?: unknown }).cordova;
+  delete (globalThis as { Capacitor?: unknown }).Capacitor;
 });
 
 describe('传输选择优先级', () => {
@@ -74,6 +75,47 @@ describe('传输选择优先级', () => {
     const client = new ElectricOpenPlatformClient();
     await client.configure(config);
     expect(currentTransportName()).toBe('cordova-exec');
+    client.dispose();
+  });
+
+  /**
+   * 回归测试（0.2.1）：Capacitor 应用自带 Cordova 兼容层，WebView 里
+   * `window.cordova.exec` 是存在的，但插件原生类并没有注册。若先判 cordova，
+   * 会把纯 Capacitor 工程误判成 Cordova 宿主，真机抛「原生请求失败：Class not found」，
+   * 而浏览器里（没有 cordova.exec）一切正常。
+   */
+  it('Capacitor 原生优先于 cordova.exec', async () => {
+    resetTransport();
+    (globalThis as { Capacitor?: unknown }).Capacitor = {
+      isNativePlatform: () => true,
+      getPlatform: () => 'android',
+    };
+    (globalThis as { cordova?: unknown }).cordova = { exec: () => {} };
+
+    expect(detectHost()).toBe('capacitor-native');
+
+    const client = new ElectricOpenPlatformClient();
+    await client.configure(config);
+    expect(currentTransportName()).toBe('capacitor-http');
+    client.dispose();
+  });
+
+  it('Capacitor 原生平台下，config.transport 仍然优先级最高', async () => {
+    resetTransport();
+    (globalThis as { Capacitor?: unknown }).Capacitor = {
+      isNativePlatform: () => true,
+      getPlatform: () => 'android',
+    };
+
+    const client = new ElectricOpenPlatformClient();
+    await client.configure({
+      ...config,
+      transport: {
+        name: 'custom',
+        postForm: async () => ({ status: 200, data: {}, raw: '' }),
+      },
+    });
+    expect(currentTransportName()).toBe('custom');
     client.dispose();
   });
 });
