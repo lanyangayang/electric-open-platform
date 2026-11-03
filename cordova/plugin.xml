@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-mantunsci-electric"
-        version="0.2.0">
+        version="0.2.1">
 
     <name>mantunsci-electric-open-platform</name>
     <description>
@@ -55,9 +55,10 @@
     </platform>
 
     <!-- ======================= 浏览器（便于调试） ======================= -->
-    <platform name="browser">
-        <js-module src="www/browser-shim.js" name="browserShim">
-            <runs />
-        </js-module>
-    </platform>
+    <!--
+        浏览器平台不需要额外的 js-module：根级 js-module（www/electric-open-platform.js）
+        已经 clobbers 了全局对象，宿主探测在浏览器里判定为 web 并走 fetch 传输。
+        早先这里引用过 www/browser-shim.js，但该文件从未提交，会让
+        `cordova platform add browser` / `cordova prepare browser` 因找不到文件而报错。
+    -->
 </plugin>

@@ -114,13 +114,21 @@ export class PowerApiService {
 
 ## 传输实现如何选择
 
-`configure()` 会自动判断宿主：
+`configure()` 会自动判断宿主（**Capacitor 优先**，见下方注意事项）：
 
-| 宿主 | 选用的传输 |
-| --- | --- |
-| 有 `cordova.exec` | `cordova-exec`（原生桥） |
-| Capacitor 原生 | `capacitor-http` |
-| 浏览器 / Node | `fetch` |
+| 优先级 | 宿主 | 选用的传输 |
+| --- | --- | --- |
+| 1 | `configure({ transport })` 显式指定 | 调用方给的实现 |
+| 2 | configure 之前 `setTransport()` 注入 | 调用方给的实现 |
+| 3 | Capacitor 原生平台 | `capacitor-http`（取不到 CapacitorHttp 时回退 `cordova-exec` / `fetch`） |
+| 4 | 有 `cordova.exec` | `cordova-exec`（原生桥） |
+| 5 | 浏览器 / Node | `fetch` |
+
+> **为什么 Capacitor 排在 `cordova.exec` 前面（0.2.1）**：Capacitor 应用自带 Cordova
+> 兼容层，WebView 里 `window.cordova.exec` 是存在的，但只有真正通过 Capacitor 装上的
+> Cordova 插件才有对应原生类。先判 `cordova.exec` 会把纯 Capacitor 工程误判成 Cordova
+> 宿主，真机抛「原生请求失败：Class not found」，而浏览器里没有 `cordova.exec` 反而正常。
+> 纯 Cordova 工程里没有全局 `Capacitor`，所以依然会正确落到 `cordova-exec`。
 
 也可以强制指定：
 
@@ -165,11 +173,11 @@ npm run build:cordova
 | --- | --- |
 | Android | ✅ 已实现（`HttpURLConnection` + `SharedPreferences`） |
 | iOS | ✅ 已实现（`URLSession` + `UserDefaults`），需 Cordova iOS ≥ 6 |
-| Browser | ⚠️ 调试用；受 CORS 限制，需代理 |
+| Browser | ⚠️ 调试用；不需要单独的 browser 平台 js-module（根级 js-module 已 clobbers 全局，宿主探测判定为 web 后走 `fetch`），但受 CORS 限制，需代理 |
 
 ## 已验证
 
-- 单元测试 104 项全部通过（含 Cordova 传输、存储、传输选择优先级）
+- 单元测试 106 项全部通过（含 Cordova 传输、存储、传输选择优先级）
 - **真实平台联调**：用模拟的 `cordova.exec` 桥跑完整链路
   （登录 → 项目 → 设备 → 实时线路 → 统计 → 刷新 token），全部成功
 - 复现：`node scripts/verify-cordova-transport.mjs`（需 `EOP_*` 环境变量）
