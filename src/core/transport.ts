@@ -1,16 +1,15 @@
 /**
  * Pluggable HTTP transport.
  *
- * The plugin must run unchanged on three very different hosts:
+ * 包内只提供一种实现（{@link createFetchTransport}，基于标准 `fetch`），
+ * 需要走原生网络栈、代理或自建网关时，实现 {@link Transport} 注入即可：
  *
- * | 宿主 | 推荐实现 | 为什么不能用 fetch |
- * | --- | --- | --- |
- * | Capacitor App | {@link createCapacitorTransport} | WebView origin 跨域，平台不返回 CORS 头 |
- * | Cordova App | `cordova.plugins.electricOpenPlatform.request`（原生） | 同上，且要避开 WebView CORS |
- * | 浏览器 / Node / 测试 | {@link createFetchTransport} | 同源或已有代理 |
+ * ```ts
+ * await ElectricOpenPlatform.configure({ ...cfg, transport: myTransport });
+ * ```
  *
  * 所有实现只负责「发出去、拿回来、把 HTTP 状态映射成异常」，
- * 解析 JSON 与业务错误码由上层统一处理，保证三种宿主行为一致。
+ * 解析 JSON 与业务错误码由上层统一处理，保证不同传输实现的行为一致。
  */
 import { ElectricOpenPlatformError, TransportCodes } from './errors.js';
 

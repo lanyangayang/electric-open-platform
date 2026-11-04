@@ -1,10 +1,10 @@
 /**
- * The plugin facade.
+ * The SDK facade.
  *
  * Everything is composed here so the public surface stays a single object:
  *
  * ```ts
- * import { ElectricOpenPlatform } from '@mantunsci/cordova-electric-open-platform';
+ * import { ElectricOpenPlatform } from '@wdywdy/electric-open-platform';
  *
  * await ElectricOpenPlatform.configure({ appKey, appSecret, redirectUri, projectCode });
  * await ElectricOpenPlatform.login('yfdq01', '******');
@@ -18,6 +18,7 @@ export declare class ElectricOpenPlatformClient {
     private auth?;
     private router?;
     private config?;
+    private backend?;
     /** Domain API groups — populated by {@link configure}. */
     project: ProjectApi;
     box: BoxApi;
@@ -31,7 +32,7 @@ export declare class ElectricOpenPlatformClient {
     thirdparty: ThirdPartyDeviceApi;
     private credentials;
     /**
-     * Configures the plugin. Safe to call again (e.g. after the user switches
+     * Configures the SDK. Safe to call again (e.g. after the user switches
      * project) — previous timers are released and tokens for the old `appKey` are
      * left untouched on disk.
      */

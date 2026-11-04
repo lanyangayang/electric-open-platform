@@ -1,10 +1,10 @@
 /**
- * The plugin facade.
+ * The SDK facade.
  *
  * Everything is composed here so the public surface stays a single object:
  *
  * ```ts
- * import { ElectricOpenPlatform } from '@mantunsci/cordova-electric-open-platform';
+ * import { ElectricOpenPlatform } from '@wdywdy/electric-open-platform';
  *
  * await ElectricOpenPlatform.configure({ appKey, appSecret, redirectUri, projectCode });
  * await ElectricOpenPlatform.login('yfdq01', '******');
@@ -22,17 +22,25 @@ import {
   ThirdPartyDeviceApi,
 } from './core/api.js';
 import { AuthManager } from './core/auth.js';
-import { currentTransport, currentTransportName, hasExplicitTransport, setTransport } from './core/http.js';
-import { detectHost, resolveTransport } from './core/host.js';
+import {
+  currentTransport,
+  currentTransportName,
+  hasExplicitTransport,
+  resolveTransport,
+  setTransport,
+} from './core/http.js';
 import { PushApi } from './core/push.js';
+import { detectRuntime } from './core/runtime.js';
 import { RouterClient } from './core/router.js';
 import { resolveBackend, TokenStore } from './core/storage.js';
+import type { KeyValueStore } from './core/storage.js';
 import { ElectricConfig, LoginResult, TokenSet } from './core/types.js';
 
 export class ElectricOpenPlatformClient {
   private auth?: AuthManager;
   private router?: RouterClient;
   private config?: ElectricConfig;
+  private backend?: KeyValueStore;
 
   /** Domain API groups — populated by {@link configure}. */
   project!: ProjectApi;
@@ -49,7 +57,7 @@ export class ElectricOpenPlatformClient {
   private credentials: { username?: string; password?: string } = {};
 
   /**
-   * Configures the plugin. Safe to call again (e.g. after the user switches
+   * Configures the SDK. Safe to call again (e.g. after the user switches
    * project) — previous timers are released and tokens for the old `appKey` are
    * left untouched on disk.
    */
@@ -60,18 +68,16 @@ export class ElectricOpenPlatformClient {
     this.config = config;
     this.credentials = { username: config.username, password: config.password };
 
-    const backend = await resolveBackend(config.storage ?? 'auto');
+    // 存储：config.store（自定义后端，最高）> config.storage 指定的内置后端
+    const backend = await resolveBackend(config.storage ?? 'auto', config.store);
+    this.backend = backend;
     const store = new TokenStore(backend, config.appKey);
     const auth = new AuthManager(store, config);
     const router = new RouterClient(config, auth, () => this.credentials);
 
-    // 按宿主选择网络传输：
-    //   config.transport（最高）> 调用方 setTransport 注入的实现 > 宿主探测
+    // 传输：config.transport（最高）> 调用方 setTransport 注入的实现 > 内置 fetch
     setTransport(
-      await resolveTransport(
-        config.transport,
-        hasExplicitTransport() ? currentTransport() : undefined,
-      ),
+      resolveTransport(config.transport, hasExplicitTransport() ? currentTransport() : undefined),
     );
 
     this.auth = auth;
@@ -97,8 +103,7 @@ export class ElectricOpenPlatformClient {
 
   /** Where tokens are persisted — useful on a diagnostics screen. */
   async storageBackend(): Promise<string> {
-    const mode = this.config?.storage ?? 'auto';
-    return (await resolveBackend(mode)).name;
+    return this.backend?.name ?? 'none';
   }
 
   // --------------------------------------------------------------------- auth
@@ -163,8 +168,10 @@ export class ElectricOpenPlatformClient {
       baseUrl: c.baseUrl ?? 'https://open.snd02.com',
       projectCode: c.projectCode,
       storage: c.storage ?? 'auto',
-      /** 运行宿主：cordova / capacitor-native / web / node */
-      host: detectHost(),
+      /** 实际生效的存储后端名（内置 memory/localStorage，或自定义 store 的 name） */
+      storageBackend: this.backend?.name ?? 'none',
+      /** 运行宿主：node / browser / unknown（仅诊断用，不参与能力选择） */
+      runtime: detectRuntime(),
       /** 实际生效的网络传输实现 */
       transport: currentTransportName(),
       token: this.auth?.current
@@ -181,12 +188,12 @@ export class ElectricOpenPlatformClient {
   }
 
   private requireAuth(): AuthManager {
-    if (!this.auth) throw new Error('插件尚未初始化，请先调用 configure({ appKey, appSecret, redirectUri })');
+    if (!this.auth) throw new Error('SDK 尚未初始化，请先调用 configure({ appKey, appSecret, redirectUri })');
     return this.auth;
   }
 
   private requireRouter(): RouterClient {
-    if (!this.router) throw new Error('插件尚未初始化，请先调用 configure()');
+    if (!this.router) throw new Error('SDK 尚未初始化，请先调用 configure()');
     return this.router;
   }
 }

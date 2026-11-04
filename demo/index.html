@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>智慧式用电开放平台 · Capacitor 插件调试台</title>
+    <title>智慧式用电开放平台 · SDK 调试台</title>
     <style>
       :root {
         --bg: #0f1419;
@@ -91,7 +91,7 @@
   </head>
   <body>
     <header>
-      <h1>智慧式用电开放平台 · Capacitor 插件调试台</h1>
+      <h1>智慧式用电开放平台 · SDK 调试台</h1>
       <span id="conn" class="badge">未连接</span>
       <span class="status" id="storage"></span>
     </header>
@@ -110,15 +110,15 @@
           </div>
           <label>存储
             <select id="storageMode">
-              <option value="auto">auto（Preferences → localStorage）</option>
-              <option value="preferences">preferences</option>
+              <option value="auto">auto（localStorage → 内存）</option>
               <option value="localStorage">localStorage</option>
               <option value="memory">memory（不持久化）</option>
             </select>
           </label>
           <button class="primary" id="btnLogin">保存并登录</button>
           <button id="btnLogout">退出</button>
-          <p class="hint">⚠️ 浏览器直连会被 CORS 拦截：请用 <code>npm run demo</code> 并通过 Capacitor 真机/模拟器运行，或先执行一次“下载数据”查看错误示例。</p>
+          <p class="hint">⚠️ 浏览器直连会被 CORS 拦截（平台不返回 CORS 头）。调试台用来看 UI 与错误路径；
+            真实请求请把 <code>baseUrl</code> 指向你自己的反向代理，或在 Node/后端里运行。</p>
         </fieldset>
 
         <fieldset>

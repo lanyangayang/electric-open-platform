@@ -113,7 +113,7 @@ function readConfig() {
     appSecret: $<HTMLInputElement>('appSecret').value.trim(),
     redirectUri: $<HTMLInputElement>('redirectUri').value.trim(),
     projectCode: $<HTMLInputElement>('projectCode').value.trim(),
-    storage: $<HTMLSelectElement>('storageMode').value as 'auto' | 'preferences' | 'localStorage' | 'memory',
+    storage: $<HTMLSelectElement>('storageMode').value as 'auto' | 'localStorage' | 'memory',
     timeoutMs: 20_000,
     logger: (e: { type: string; method?: string; message: string }) => {
       console.debug(`[eop:${e.type}]`, e.method ?? '', e.message);

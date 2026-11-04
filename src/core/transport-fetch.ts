@@ -1,9 +1,11 @@
 /**
- * 基于 `fetch` 的传输实现。
+ * 基于标准 `fetch` 的传输实现 —— 包内唯一的默认实现。
  *
- * 适用：浏览器（同源或已配代理）、Node/Electron、单元测试。
- * 在 Capacitor/Cordova 的 WebView 里会因平台不返回 CORS 头而失败，
- * 那两个环境请用各自的原生传输实现。
+ * 适用：Node ≥ 18、Electron 主进程、Deno/Bun、以及**同源或已配反向代理**的浏览器。
+ *
+ * ⚠️ 浏览器里直接请求 `open.snd02.com` 会被同源策略拦截：平台不返回 CORS 头。
+ * 浏览器场景请把 `baseUrl` 指向自己的代理/后端中转，或注入一个走原生网络的
+ * {@link Transport} 实现（见 README「在任何环境里使用」）。
  */
 import { ElectricOpenPlatformError, TransportCodes } from './errors.js';
 import {

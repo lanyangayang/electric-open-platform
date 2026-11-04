@@ -1,78 +1,65 @@
 {
-  "name": "@mantunsci/cordova-electric-open-platform",
-  "version": "0.2.3",
-  "description": "Capacitor 与 Cordova 双形态插件：智慧式用电数据开放平台 (open.snd02.com) —— OAuth2 token 生命周期、MD5 参数签名，以及全部 router.as 接口的类型化封装。",
-  "main": "dist/plugin.cjs/index.js",
+  "name": "@wdywdy/electric-open-platform",
+  "version": "1.0.0",
+  "description": "智慧式用电数据开放平台（open.snd02.com）的纯 TypeScript SDK：OAuth2 token 生命周期、MD5 参数签名，以及全部 router.as 接口的类型化封装。零运行时依赖，Node / 浏览器 / Electron / 任意前端框架通用。",
+  "type": "module",
+  "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "require": "./dist/plugin.cjs/index.js"
+      "require": "./dist/cjs/index.js"
     },
     "./package.json": "./package.json"
   },
+  "sideEffects": false,
   "files": [
     "dist/",
-    "cordova/",
     "README.md",
     "LICENSE"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run build:cordova",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build:cjs": "tsc -p tsconfig.cjs.json && node scripts/finalize-cjs.mjs",
+    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit -p tsconfig.json",
     "demo": "vite --config vite.demo.config.ts",
     "verify:live": "node scripts/verify-live.mjs",
-    "prepublishOnly": "npm run build",
-    "build:cordova": "node cordova/build.cjs"
+    "check:versions": "node scripts/check-versions.mjs",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "capacitor",
-    "plugin",
-    "capacitor-plugin",
-    "cordova",
-    "cordova-plugin",
-    "iot",
+    "mantunsci",
     "electric",
     "snd02",
-    "mantunsci",
-    "smart-power"
+    "iot",
+    "smart-power",
+    "open-platform",
+    "sdk",
+    "api-client",
+    "oauth2",
+    "typescript"
   ],
   "author": "ACME 毅丰电器",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/lanyangayang/cordova-mantunsci-electric.git"
   },
-  "peerDependencies": {
-    "@capacitor/core": ">=5.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@capacitor/core": {
-      "optional": true
-    },
-    "@capacitor/preferences": {
-      "optional": true
-    }
-  },
   "devDependencies": {
-    "@capacitor/core": "^6.1.0",
-    "@capacitor/preferences": "^6.0.2",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.4"
-  },
-  "cordova": {
-    "id": "cordova-plugin-mantunsci-electric",
-    "platforms": [
-      "android",
-      "ios"
-    ]
   }
 }

@@ -1,4 +1,6 @@
 /** Shared configuration and token types. */
+import type { KeyValueStore } from './storage.js';
+import type { Transport } from './transport.js';
 export interface ElectricConfig {
     /** `appKey` from the open-platform console — sent as `client_id`. */
     appKey: string;
@@ -21,14 +23,25 @@ export interface ElectricConfig {
     /** Where tokens are persisted. Default `auto`. */
     storage?: StorageMode;
     /**
-     * 显式指定网络传输实现。留空则按宿主自动选择
-     * （Cordova → 原生桥，Capacitor 原生 → CapacitorHttp，其它 → fetch）。
+     * 自定义存储后端（优先级高于 `storage`）。
+     *
+     * 想把 token 写进文件、Redis、数据库，或 iOS `UserDefaults`／Android
+     * `SharedPreferences`，实现 {@link KeyValueStore} 的 4 个方法传进来即可，
+     * 包本身不会引入任何平台 SDK。
      */
-    transport?: import('./transport.js').Transport;
+    store?: KeyValueStore;
+    /**
+     * 自定义网络传输实现。留空则用内置 `fetch`。
+     *
+     * 浏览器里平台不返回 CORS 头，直接调用会被同源策略拦截 —— 这种情况下要么
+     * 让 `baseUrl` 指向你自己的反向代理/后端中转，要么注入一个走原生网络的实现。
+     */
+    transport?: Transport;
     /** Called for every request/response when set. Console-friendly. */
     logger?: ElectricLogger;
 }
-export type StorageMode = 'auto' | 'preferences' | 'cordova' | 'localStorage' | 'memory';
+/** `auto` = localStorage → 内存；Node 里没有 localStorage 时自动退到内存。 */
+export type StorageMode = 'auto' | 'localStorage' | 'memory';
 export type ElectricLogger = (event: ElectricLogEvent) => void;
 export interface ElectricLogEvent {
     type: 'request' | 'response' | 'token' | 'error';
