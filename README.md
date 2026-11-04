@@ -34,14 +34,16 @@
 ## 安装
 
 ```bash
-# 方式一：从 GitHub 安装（当前可用，仓库已提交 dist/，装完即可用，无需构建）
-npm install git+https://github.com/lanyangayang/cordova-mantunsci-electric.git#v1.0.0
-
-# 方式二：从 npm 安装（需先 npm publish，见「发布到 npm」）
-# npm install @wdywdy/electric-open-platform
+npm install @wdywdy/electric-open-platform
 ```
 
-两种方式装出来的包名都是 `@wdywdy/electric-open-platform`，`import` 路径一致。
+已发布到 npm：<https://www.npmjs.com/package/@wdywdy/electric-open-platform>
+
+> 备选：直接从 GitHub tag 安装（适合内网或镜像源不通时，仓库已提交 `dist/`，装完即可用）
+> ```bash
+> npm install git+https://github.com/lanyangayang/cordova-mantunsci-electric.git#v1.0.0
+> ```
+> 两种方式装出来的包名都是 `@wdywdy/electric-open-platform`，`import` 路径一致。
 
 零依赖、无 peer 依赖、无需 `cap sync` / `cordova prepare`。要求 Node ≥ 18（需要全局 `fetch`），
 或任何支持 ES2020 的浏览器/打包器。
@@ -533,10 +535,13 @@ export class PowerApiService {
 包名 **`@wdywdy/electric-open-platform`**（`@wdywdy` 是 npm 个人账号 `wdywdy` 的用户名 scope，
 无需建组织即可发布）。只发布**一个**包，版本以 `package.json` 为准：
 
-> ⚠️ **发布前置条件**：该账号开启了 2FA，`npm publish` 会要求
-> 「动态码」或「勾选了 *Bypass 2FA* 的 **Granular Access Token**（Read and write）」。
-> 两者都没有时会返回 `E403 Two-factor authentication ... is required to publish packages`。
-> 在打通之前，安装方式请用上面的 GitHub 源。
+> ℹ️ **1.0.0 已于 2026-11-04 成功发布**（用勾选了 *Bypass 2FA* 的 **Granular Access Token**，
+> 权限 Read and write + All packages）。
+> 该账号开了 2FA，日后发布同样需要「动态码」或这种 token，否则会返回
+> `E403 Two-factor authentication ... is required to publish packages`。
+>
+> ⚠️ 注意：**只读 token 不行** —— 它连 `npm access list packages` 都会 403，
+> publish 同样失败，必须先确认 token 具备写权限。
 
 ```bash
 # 首次发布
