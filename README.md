@@ -34,8 +34,14 @@
 ## 安装
 
 ```bash
-npm install @wdywdy/electric-open-platform
+# 方式一：从 GitHub 安装（当前可用，仓库已提交 dist/，装完即可用，无需构建）
+npm install git+https://github.com/lanyangayang/cordova-mantunsci-electric.git#v1.0.0
+
+# 方式二：从 npm 安装（需先 npm publish，见「发布到 npm」）
+# npm install @wdywdy/electric-open-platform
 ```
+
+两种方式装出来的包名都是 `@wdywdy/electric-open-platform`，`import` 路径一致。
 
 零依赖、无 peer 依赖、无需 `cap sync` / `cordova prepare`。要求 Node ≥ 18（需要全局 `fetch`），
 或任何支持 ES2020 的浏览器/打包器。
@@ -526,6 +532,11 @@ export class PowerApiService {
 
 包名 **`@wdywdy/electric-open-platform`**（`@wdywdy` 是 npm 个人账号 `wdywdy` 的用户名 scope，
 无需建组织即可发布）。只发布**一个**包，版本以 `package.json` 为准：
+
+> ⚠️ **发布前置条件**：该账号开启了 2FA，`npm publish` 会要求
+> 「动态码」或「勾选了 *Bypass 2FA* 的 **Granular Access Token**（Read and write）」。
+> 两者都没有时会返回 `E403 Two-factor authentication ... is required to publish packages`。
+> 在打通之前，安装方式请用上面的 GitHub 源。
 
 ```bash
 # 首次发布
