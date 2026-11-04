@@ -15,7 +15,7 @@
  * | 自定义 | `config.store` | 想写入文件、Redis、数据库、iOS `UserDefaults`／Android
  *   `SharedPreferences` 时，自己实现 4 个方法传给 `configure({ store })` 即可 |
  *
- * 之前版本内置的宿主原生存储（Cordova SharedPreferences、Capacitor Preferences）已移除：
+ * 之前版本内置了若干宿主原生存储适配（系统偏好、键值库等），现已移除：
  * 它们需要宿主桥接或额外依赖，与「纯 npm 包、任何项目都能用」的目标冲突。
  * 同样的能力可以用自定义 store 在 10 行内实现，见 README。
  */

@@ -2,8 +2,8 @@
 
 面向 **智慧式用电数据开放平台**（Mtsci Open Platform，`open.snd02.com`）的纯 TypeScript SDK。
 
-**零运行时依赖** —— 不依赖 Capacitor、Cordova，也不含任何原生工程。`npm install` 之后，
-在 Node 后端、Electron、浏览器（配代理）、任意前端框架里都能直接 `import`。
+**零运行时依赖、零原生工程** —— 不依赖任何宿主框架，`npm install` 之后即可在
+Node 后端、Electron、浏览器（配代理）、任意前端框架里直接 `import`。
 
 - **OAuth2 全流程**：headless 登录（`authverify2.as`）与重定向登录两种授权方式，
   `accessToken` / `refreshToken` 自动维护与提前续期，并发请求只刷新一次。
@@ -16,19 +16,6 @@
   需要走原生网络栈、自建网关、Redis、文件时注入自己的实现即可。
 - **已对真实平台联调验证**：见 [验证结果](#已验证行为)。
 
-> ### 从 0.2.x 升级到 1.0.0
->
-> | 项 | 0.2.x | 1.0.0 |
-> | --- | --- | --- |
-> | 包名 | `@mantunsci/cordova-electric-open-platform` | `@wdywdy/electric-open-platform` |
-> | Capacitor / Cordova | 双形态，含原生工程与可选 peer 依赖 | **全部移除**，纯 JS/TS |
-> | `storage: 'preferences' \| 'cordova'` | 内置平台存储 | 改为传 `store`（自定义实现）或 `'localStorage' \| 'memory'` |
-> | `describe().host` | `cordova` / `capacitor-native` / `web` / `node` | `describe().runtime` → `node` / `browser` / `unknown` |
-> | 传输选择 | 宿主探测自动装配三套实现 | 只认 `config.transport` / `setTransport()` / 内置 `fetch` |
-> | 已删除的导出 | `createCapacitorTransport`、`createCordovaTransport`、`detectHost`、`CORDOVA_PLUGIN_ID` | 用 `Transport` 接口自行实现，见下文 |
->
-> 原来的 Capacitor / Cordova 实现各约 70/120 行，迁移成本很低，本文给了现成片段。
-
 ---
 
 ## 安装
@@ -39,13 +26,7 @@ npm install @wdywdy/electric-open-platform
 
 已发布到 npm：<https://www.npmjs.com/package/@wdywdy/electric-open-platform>
 
-> 备选：直接从 GitHub tag 安装（适合内网或镜像源不通时，仓库已提交 `dist/`，装完即可用）
-> ```bash
-> npm install git+https://github.com/lanyangayang/cordova-mantunsci-electric.git#v1.0.0
-> ```
-> 两种方式装出来的包名都是 `@wdywdy/electric-open-platform`，`import` 路径一致。
-
-零依赖、无 peer 依赖、无需 `cap sync` / `cordova prepare`。要求 Node ≥ 18（需要全局 `fetch`），
+零依赖、无 peer 依赖，也不需要任何平台工程初始化步骤。要求 Node ≥ 18（需要全局 `fetch`），
 或任何支持 ES2020 的浏览器/打包器。
 
 ## 快速开始
@@ -91,7 +72,7 @@ await ElectricOpenPlatform.control.switchCircuit({
 | Electron 主进程 | ✅ | 直接用 |
 | Electron 渲染进程 | ⚠️ | 走 IPC 到主进程，或在主进程建一个 transport |
 | 浏览器单页应用 | ❌ | `baseUrl` 指向你自己的反向代理 / 后端中转 |
-| Capacitor / Cordova / 小程序等有原生网络的容器 | ⚠️ | 注入一个走原生网络的 `transport`（10 行） |
+| 有原生网络能力的容器（App 壳、小程序等） | ⚠️ | 注入一个走原生网络的 `transport`（10 行） |
 
 ### 浏览器：用反向代理（推荐）
 
@@ -135,32 +116,22 @@ const viaMainProcess: Transport = {
 await ElectricOpenPlatform.configure({ ...cfg, transport: viaMainProcess });
 ```
 
-原来的 Capacitor 实现等价写法（在 Capacitor App 里用 `CapacitorHttp`）：
+如果宿主的网络能力来自原生桥（而不是浏览器 `fetch`），同样只需要包一层 `postForm()`：
 
 ```ts
-import { CapacitorHttp } from '@capacitor/core';
 import { parseBody, type Transport } from '@wdywdy/electric-open-platform';
 
-const capacitorHttp: Transport = {
-  name: 'capacitor-http',
+const viaNative: Transport = {
+  name: 'native-http',
   async postForm(req) {
-    const res = await CapacitorHttp.post({
-      url: req.url,
-      headers: req.headers ?? {},
-      data: req.body,
-      responseType: 'text',
-      connectTimeout: req.timeoutMs,
-      readTimeout: req.timeoutMs,
-    });
-    const raw = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-    return { status: res.status, data: parseBody(raw), raw };
+    // 由你的原生桥返回 { status, body }；不受 WebView 同源策略限制
+    const res = await nativeBridge.httpRequest(req.url, req.body, req.headers);
+    return { status: res.status, data: parseBody(res.body), raw: res.body };
   },
 };
 
-await ElectricOpenPlatform.configure({ ...cfg, transport: capacitorHttp });
+await ElectricOpenPlatform.configure({ ...cfg, transport: viaNative });
 ```
-
-Cordova 工程同理：把 `cordova.exec` 包一层 `postForm()` 即可，不再需要本包提供原生工程。
 
 ### 注入自己的存储实现
 
@@ -454,7 +425,7 @@ node scripts/diagnose-getbox.mjs   # 对照实验：证明 GET_BOX 是未开通�
 ```bash
 npm install
 npm test          # 99 个单测：MD5 向量、签名样例、token 生命周期、接口参数、
-                  # 传输/存储注入优先级，以及「不得再出现 Capacitor/Cordova」的防回潮守卫
+                  # 传输/存储注入优先级，以及「不得出现平台耦合」的防回潮守卫
 npm run build     # 产出 dist/esm（ESM）+ dist/cjs（CJS）+ 完整 .d.ts
 npm run demo      # 打开 http://localhost:5178 调试台
 ```
@@ -560,13 +531,13 @@ git tag v1.0.1 && git push && git push --tags
 ```
 
 工作流 `.github/workflows/publish-npm.yml` 会依次：装依赖 → 跑单测 → 重建产物并校验产物已提交
-→ 校验版本与零依赖 → **grep 断言产物里没有 Capacitor/Cordova 残留** → 打包自检 → 发布
+→ 校验版本与零依赖 → **grep 断言产物里没有平台耦合残留** → 打包自检 → 发布
 （已发布过的版本自动跳过，便于重跑）。
 
 **CI 自动发布需要配认证**，二选一：
 
 1. **Trusted Publishing（推荐，无需存 token）**：npm 包页面 → Settings → Trusted Publisher →
-   绑定 GitHub 仓库 `lanyangayang/cordova-mantunsci-electric` 与 workflow 文件名
+   GitHub 仓库（`lanyangayang/electric-open-platform`）与 workflow 文件名
    `publish-npm.yml`（workflow 里已有 `id-token: write` 与 `--provenance`）。
    注意：包必须先手动发布过一次才能绑定。
 2. **Access Token**：仓库 Settings → Secrets and variables → Actions → `NPM_TOKEN`，

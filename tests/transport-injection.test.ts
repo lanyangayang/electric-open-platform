@@ -67,7 +67,7 @@ describe('传输选择优先级（无宿主探测）', () => {
     client.dispose();
   });
 
-  it('未注入时一律用内置 fetch（不再看 cordova/Capacitor 全局对象）', async () => {
+  it('未注入时一律用内置 fetch（不读取任何全局对象）', async () => {
     const client = new ElectricOpenPlatformClient();
     await client.configure(config);
 
